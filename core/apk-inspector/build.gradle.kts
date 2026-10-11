@@ -1,6 +1,14 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    id("com.android.library")
+    kotlin("multiplatform")
 }
-kotlin { androidTarget(); sourceSets { commonMain.dependencies { api(project(":core:apk-model") } } }
-android { namespace = "com.bloxinsight.core.inspector"; compileSdk = 35; defaultConfig { minSdk = 24 } }
+
+kotlin {
+    androidTarget()
+
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":core:apk-model"))
+        }
+    }
+}

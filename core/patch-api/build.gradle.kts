@@ -24,8 +24,8 @@ kotlin {
 
 android {
     namespace = "com.bloxinsight.core.patchapi"
-    compileSdk = 35
-    defaultConfig { minSdk = 24 }
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    defaultConfig { minSdk = libs.versions.android.minSdk.get().toInt() }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

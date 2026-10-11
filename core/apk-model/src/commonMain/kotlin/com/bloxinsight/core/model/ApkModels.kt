@@ -1,10 +1,6 @@
 package com.bloxinsight.core.model
 
-data class ApkInput(
-    val displayName: String,
-    val sourceDescription: String,
-    val sha256: String? = null
-)
+data class ApkInput(val displayName: String, val sourceDescription: String, val sha256: String? = null)
 
 data class ApkInspection(
     val packageName: String?,
@@ -33,19 +29,9 @@ data class ApkInspection(
     }
 }
 
-data class PatchProfile(
-    val id: String,
-    val displayName: String,
-    val allowedPackageNames: Set<String>,
-    val description: String
-)
+data class PatchProfile(val id: String, val displayName: String, val allowedPackageNames: Set<String>, val description: String)
 
-data class PatchPlan(
-    val input: ApkInput,
-    val profile: PatchProfile,
-    val steps: List<String>,
-    val warnings: List<String> = emptyList()
-)
+data class PatchPlan(val input: ApkInput, val profile: PatchProfile, val steps: List<String>, val warnings: List<String> = emptyList())
 
 sealed interface PatchResult {
     data class Success(val outputPath: String, val sha256: String?) : PatchResult

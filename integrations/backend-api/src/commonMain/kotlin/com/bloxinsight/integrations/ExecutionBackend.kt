@@ -7,11 +7,7 @@ enum class BackendCapability {
     PRIVILEGED_FILE_OPERATION
 }
 
-data class BackendStatus(
-    val available: Boolean,
-    val authorized: Boolean,
-    val message: String
-)
+data class BackendStatus(val available: Boolean, val authorized: Boolean, val message: String)
 
 interface ExecutionBackend {
     val id: String

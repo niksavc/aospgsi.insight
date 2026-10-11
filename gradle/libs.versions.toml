@@ -11,8 +11,8 @@ android-compileSdk = "37"
 androidx-activity = "1.9.3"
 androidx-compose-bom = "2026.08.00"
 
-spotless = "7.2.1"
-ktlint = "1.5.0"
+spotless = "8.10.4"
+ktfmt = "0.65"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }

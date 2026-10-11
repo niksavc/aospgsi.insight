@@ -18,21 +18,21 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun BloxInsightApp() {
-    var selectedTab by remember { mutableStateOf("Library") }
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text("BloxInsight", style = MaterialTheme.typography.headlineLarge)
-                Text("APK inspection and patching workbench")
-                Text("Prototype scaffold · no APK is modified by this screen.")
-                Button(onClick = { selectedTab = "Library" }) { Text("Library") }
-                Button(onClick = { selectedTab = "Patch workspace" }) { Text("Patch workspace") }
-                Button(onClick = { selectedTab = "Backends" }) { Text("Execution backends") }
-                Text("Current section: $selectedTab", style = MaterialTheme.typography.titleMedium)
-            }
-        }
+  var selectedTab by remember { mutableStateOf("Library") }
+  MaterialTheme {
+    Surface(modifier = Modifier.fillMaxSize()) {
+      Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        Text("BloxInsight", style = MaterialTheme.typography.headlineLarge)
+        Text("APK inspection and patching workbench")
+        Text("Prototype scaffold · no APK is modified by this screen.")
+        Button(onClick = { selectedTab = "Library" }) { Text("Library") }
+        Button(onClick = { selectedTab = "Patch workspace" }) { Text("Patch workspace") }
+        Button(onClick = { selectedTab = "Backends" }) { Text("Execution backends") }
+        Text("Current section: $selectedTab", style = MaterialTheme.typography.titleMedium)
+      }
     }
+  }
 }

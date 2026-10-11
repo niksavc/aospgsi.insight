@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inspector_title">APK Inspector</string>
+    <string name="inspector_subtitle">Read-only analysis of the manifest, permissions and native libraries.</string>
+    <string name="pick_apk">Choose APK</string>
+    <string name="analyzing_button">Analyzing…</string>
+
+    <string name="status_idle">Choose an APK file for local analysis.</string>
+    <string name="status_analyzing">Analyzing APK…</string>
+    <string name="status_done">Analysis complete. The file was not modified.</string>
+    <string name="status_failed">Could not analyze the APK: %1$s</string>
+    <string name="error_unknown">unknown error</string>
+
+    <string name="card_app_info">App details</string>
+    <string name="label_file">File</string>
+    <string name="label_size">Size</string>
+    <string name="label_name">Name</string>
+    <string name="label_package">Package ID</string>
+    <string name="label_version">Version</string>
+    <string name="label_version_code">Version code</string>
+    <string name="label_min_sdk">Min SDK</string>
+    <string name="label_target_sdk">Target SDK</string>
+    <string name="label_abi">ABI</string>
+    <string name="value_unknown">Unknown</string>
+    <string name="roblox_detected">Known Roblox package ID detected.</string>
+
+    <string name="card_permissions">Requested permissions (%1$d)</string>
+    <string name="permissions_note">These are permissions declared in the APK manifest, not permissions granted by the user.</string>
+    <string name="permissions_none">No permissions found.</string>
+
+    <string name="card_native_libs">Native libraries (%1$d)</string>
+    <string name="native_libs_none">No native .so libraries found.</string>
+
+    <string name="safety_note">Security: the APK is analyzed locally. BloxInsight does not install, run or modify the selected file.</string>
+</resources>

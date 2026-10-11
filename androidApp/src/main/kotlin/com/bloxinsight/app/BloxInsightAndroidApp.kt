@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bloxinsight.core.apkinspector.ApkAnalyzer
 import com.bloxinsight.core.model.ApkInspection
@@ -31,33 +32,40 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** UI state of the analysis status line; rendered with string resources so it follows the app language. */
+private sealed interface AnalysisStatus {
+    data object Idle : AnalysisStatus
+    data object Analyzing : AnalysisStatus
+    data object Done : AnalysisStatus
+    data class Failed(val message: String?) : AnalysisStatus
+}
+
 @Composable
 fun BloxInsightAndroidApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var result by remember { mutableStateOf<ApkInspection?>(null) }
-    var status by remember { mutableStateOf("Выбери APK-файл для локального анализа.") }
-    var busy by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<AnalysisStatus>(AnalysisStatus.Idle) }
+    val busy = status is AnalysisStatus.Analyzing
 
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            busy = true
-            status = "Анализ APK…"
+            status = AnalysisStatus.Analyzing
             result = null
             scope.launch {
-                try {
+                status = try {
                     result = withContext(Dispatchers.IO) { ApkAnalyzer(context).analyze(uri) }
-                    status = "Анализ завершён. Файл не изменялся."
+                    AnalysisStatus.Done
                 } catch (e: Exception) {
-                    status = "Не удалось проанализировать APK: ${e.message ?: "неизвестная ошибка"}"
-                } finally {
-                    busy = false
+                    AnalysisStatus.Failed(e.message)
                 }
             }
         }
     }
+
+    val unknown = stringResource(R.string.value_unknown)
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -66,17 +74,24 @@ fun BloxInsightAndroidApp() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text("BloxInsight", style = MaterialTheme.typography.headlineLarge)
-                Text("APK Inspector", style = MaterialTheme.typography.titleLarge)
-                Text("Read-only анализ манифеста, разрешений и нативных библиотек.")
+                Text(stringResource(R.string.inspector_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.inspector_subtitle))
                 Button(
                     onClick = {
                         picker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream"))
                     },
                     enabled = !busy
                 ) {
-                    Text(if (busy) "Анализ…" else "Выбрать APK")
+                    Text(stringResource(if (busy) R.string.analyzing_button else R.string.pick_apk))
                 }
-                Text(status, style = MaterialTheme.typography.bodyMedium)
+                val statusText = when (val s = status) {
+                    AnalysisStatus.Idle -> stringResource(R.string.status_idle)
+                    AnalysisStatus.Analyzing -> stringResource(R.string.status_analyzing)
+                    AnalysisStatus.Done -> stringResource(R.string.status_done)
+                    is AnalysisStatus.Failed ->
+                        stringResource(R.string.status_failed, s.message ?: stringResource(R.string.error_unknown))
+                }
+                Text(statusText, style = MaterialTheme.typography.bodyMedium)
 
                 result?.let { apk ->
                     Card(modifier = Modifier.fillMaxWidth()) {
@@ -84,19 +99,20 @@ fun BloxInsightAndroidApp() {
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text("Сведения о приложении", style = MaterialTheme.typography.titleLarge)
-                            InfoRow("Файл", apk.fileName ?: UNKNOWN)
-                            InfoRow("Размер", apk.fileSizeBytes?.let(::formatFileSize) ?: UNKNOWN)
-                            InfoRow("Название", apk.appLabel ?: UNKNOWN)
-                            InfoRow("Package ID", apk.packageName ?: UNKNOWN)
-                            InfoRow("Версия", apk.versionName ?: UNKNOWN)
-                            InfoRow("Version code", apk.versionCode?.toString() ?: UNKNOWN)
-                            InfoRow("Min SDK", apk.minSdk?.toString() ?: UNKNOWN)
-                            InfoRow("Target SDK", apk.targetSdk?.toString() ?: UNKNOWN)
-                            InfoRow("ABI", apk.nativeAbis.joinToString().ifEmpty { "—" })
+                            Text(stringResource(R.string.card_app_info), style = MaterialTheme.typography.titleLarge)
+                            InfoRow(stringResource(R.string.label_file), apk.fileName ?: unknown)
+                            InfoRow(stringResource(R.string.label_size), apk.fileSizeBytes?.let(::formatFileSize) ?: unknown)
+                            InfoRow(stringResource(R.string.label_name), apk.appLabel ?: unknown)
+                            InfoRow(stringResource(R.string.label_package), apk.packageName ?: unknown)
+                            InfoRow(stringResource(R.string.label_version), apk.versionName ?: unknown)
+                            InfoRow(stringResource(R.string.label_version_code), apk.versionCode?.toString() ?: unknown)
+                            InfoRow(stringResource(R.string.label_min_sdk), apk.minSdk?.toString() ?: unknown)
+                            InfoRow(stringResource(R.string.label_target_sdk), apk.targetSdk?.toString() ?: unknown)
+                            InfoRow(stringResource(R.string.label_abi), apk.nativeAbis.joinToString().ifEmpty { "—" })
                             if (apk.isLegacyRobloxInspectionTarget) {
-                                Text("Обнаружен известный package ID Roblox.", color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.roblox_detected), color = MaterialTheme.colorScheme.primary)
                             }
+                            // Warnings come from the core module and are currently English-only.
                             apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
                         }
                     }
@@ -106,9 +122,12 @@ fun BloxInsightAndroidApp() {
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Запрошенные разрешения (${apk.requestedPermissions.size})", style = MaterialTheme.typography.titleLarge)
-                            Text("Это разрешения из APK-манифеста, а не список выданных пользователем разрешений.")
-                            if (apk.requestedPermissions.isEmpty()) Text("Разрешения не найдены.")
+                            Text(
+                                stringResource(R.string.card_permissions, apk.requestedPermissions.size),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(stringResource(R.string.permissions_note))
+                            if (apk.requestedPermissions.isEmpty()) Text(stringResource(R.string.permissions_none))
                             apk.requestedPermissions.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
                         }
                     }
@@ -118,22 +137,20 @@ fun BloxInsightAndroidApp() {
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Нативные библиотеки (${apk.nativeLibraries.size})", style = MaterialTheme.typography.titleLarge)
-                            if (apk.nativeLibraries.isEmpty()) Text("Нативные .so библиотеки не найдены.")
+                            Text(
+                                stringResource(R.string.card_native_libs, apk.nativeLibraries.size),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            if (apk.nativeLibraries.isEmpty()) Text(stringResource(R.string.native_libs_none))
                             apk.nativeLibraries.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
                         }
                     }
                 }
-                Text(
-                    "Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.",
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text(stringResource(R.string.safety_note), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
 }
-
-private const val UNKNOWN = "Неизвестно"
 
 private fun formatFileSize(bytes: Long): String = when {
     bytes < 1024 -> "$bytes B"

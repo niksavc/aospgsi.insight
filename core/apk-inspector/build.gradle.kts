@@ -14,6 +14,6 @@ kotlin {
 }
 
 android {
-    namespace = "com.bloxinsight.core.apkinspector"
+    namespace = "com.bloxinsight.core.patchapi"
     compileSdk = 35
 }

@@ -58,5 +58,24 @@
     <string name="exported_marker">exported</string>
     <string name="none_found">None found.</string>
 
+    <string name="card_install_check">Install check</string>
+    <string name="install_no_issues">No problems found. Android is expected to accept this file.</string>
+    <string name="install_button">Install</string>
+    <string name="install_preparing">Preparing installation…</string>
+    <string name="install_waiting">Waiting for the system installer…</string>
+    <string name="install_confirm">Confirm the installation in the system dialog.</string>
+    <string name="install_success">Installed %1$s.</string>
+    <string name="install_failed">Installation failed: %1$s</string>
+    <string name="install_status_code">installer status %1$d</string>
+    <string name="issue_no_package_name">The APK has no package name.</string>
+    <string name="issue_signature_invalid">The APK signature is missing or invalid; Android refuses such files.</string>
+    <string name="issue_signer_mismatch">%1$s is already installed with a different signing key, so it cannot be updated. Uninstall it first (its data is lost) or use a different package ID.</string>
+    <string name="issue_downgrade">The installed version code (%1$s) is newer than this file (%2$s); Android does not allow downgrades.</string>
+    <string name="issue_min_sdk_too_high">This app needs Android API %1$s or newer; this device runs API %2$s.</string>
+    <string name="issue_target_sdk_too_low">This app targets API %1$s, but this Android version refuses new installs of apps targeting below API %2$s. A privileged installer (Shizuku, root) or a patched manifest is needed.</string>
+    <string name="issue_no_compatible_abi">The native libraries (%1$s) do not match this device\'s ABIs (%2$s).</string>
+    <string name="issue_unknown_signer">The signing key of %1$s is not in your trusted list; the file may be modified or repackaged.</string>
+    <string name="issue_16kb">This device uses 16 KiB memory pages and some native libraries are not 16 KiB compatible; the app may crash on launch.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. BloxInsight does not install, run or modify the selected file.</string>
 </resources>

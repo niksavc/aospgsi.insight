@@ -21,9 +21,39 @@ data class ApkInspection(
   val requestedPermissions: List<String> = emptyList(),
   /** APK ZIP paths, e.g. lib/arm64-v8a/libexample.so */
   val nativeLibraries: List<String> = emptyList(),
+  val nativeLibraryDetails: List<NativeLibraryInfo> = emptyList(),
+  val declaredPermissions: List<String> = emptyList(),
+  val activities: List<ApkComponent> = emptyList(),
+  val services: List<ApkComponent> = emptyList(),
+  val receivers: List<ApkComponent> = emptyList(),
+  val providers: List<ApkComponent> = emptyList(),
+  val metaData: Map<String, String> = emptyMap(),
+  /** SHA-256 of the file the user picked (an APK or a bundle such as .apks/.xapk/.apkm). */
+  val sha256: String? = null,
+  /** Null when the signature could not be checked at all. */
+  val signatureVerified: Boolean? = null,
+  /** Signature schemes that verified, e.g. "v1", "v2", "v3". */
+  val signatureSchemes: List<String> = emptyList(),
+  /** APK file names inside a bundle; empty when the input was a plain APK. */
+  val bundleApks: List<String> = emptyList(),
 ) {
   val isLegacyRobloxInspectionTarget: Boolean
     get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS
+
+  val isBundle: Boolean
+    get() = bundleApks.isNotEmpty()
+
+  /**
+   * Whether all 64-bit native libraries are ready for 16 KiB page-size devices: ELF segments
+   * aligned and, when stored uncompressed, zip-aligned. Null when there are no 64-bit libraries to
+   * judge.
+   */
+  val sixteenKbReady: Boolean?
+    get() {
+      val libs64 = nativeLibraryDetails.filter { it.is64Bit }
+      if (libs64.isEmpty()) return null
+      return libs64.all { it.elfAlignedTo16Kb == true && it.zipAlignedTo16Kb != false }
+    }
 
   companion object {
     val LEGACY_ROBLOX_PACKAGE_IDS =
@@ -33,6 +63,21 @@ data class ApkInspection(
       )
   }
 }
+
+data class ApkComponent(val name: String, val exported: Boolean)
+
+data class NativeLibraryInfo(
+  /** APK ZIP path, e.g. lib/arm64-v8a/libexample.so */
+  val path: String,
+  val abi: String,
+  val is64Bit: Boolean,
+  /** True when the entry is stored without compression (so its zip offset matters). */
+  val storedUncompressed: Boolean,
+  /** Null when the entry is compressed, where zip alignment does not apply. */
+  val zipAlignedTo16Kb: Boolean?,
+  /** Null when the ELF header could not be read. */
+  val elfAlignedTo16Kb: Boolean?,
+)
 
 data class PatchProfile(
   val id: String,

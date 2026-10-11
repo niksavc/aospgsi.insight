@@ -31,5 +31,29 @@
     <string name="card_native_libs">Нативные библиотеки (%1$d)</string>
     <string name="native_libs_none">Нативные .so библиотеки не найдены.</string>
 
+    <string name="label_sha256">SHA-256</string>
+    <string name="bundle_note">Бандл из %1$d APK-файлов; проанализирован базовый APK.</string>
+
+    <string name="card_signatures">Подписи</string>
+    <string name="sig_verified_yes">Подпись проверена.</string>
+    <string name="sig_verified_no">Подпись не удалось проверить.</string>
+    <string name="sig_schemes">Схемы: %1$s</string>
+    <string name="sig_none">Сертификаты подписи не найдены.</string>
+
+    <string name="card_16kb">Готовность к страницам 16 КиБ</string>
+    <string name="kb16_ready">Все 64-битные нативные библиотеки совместимы с устройствами со страницей 16 КиБ.</string>
+    <string name="kb16_not_ready">Часть 64-битных нативных библиотек несовместима с устройствами со страницей 16 КиБ (см. список ниже).</string>
+    <string name="kb16_no_64bit">Нет 64-битных нативных библиотек для проверки.</string>
+
+    <string name="card_declared_permissions">Объявленные разрешения (%1$d)</string>
+    <string name="card_activities">Activity (%1$d)</string>
+    <string name="card_services">Службы (%1$d)</string>
+    <string name="card_receivers">Broadcast-приёмники (%1$d)</string>
+    <string name="card_providers">Content-провайдеры (%1$d)</string>
+    <string name="card_metadata">Meta-data (%1$d)</string>
+    <string name="card_splits">Состав бандла (%1$d)</string>
+    <string name="exported_marker">exported</string>
+    <string name="none_found">Не найдено.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

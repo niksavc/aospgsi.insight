@@ -21,6 +21,9 @@ kotlin {
     commonMain.dependencies {
       api(project(":core:apk-model"))
     }
+    androidMain.dependencies {
+      implementation(libs.apksig)
+    }
     commonTest.dependencies {
       implementation(kotlin("test"))
     }

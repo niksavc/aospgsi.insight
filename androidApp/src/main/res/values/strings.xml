@@ -31,5 +31,29 @@
     <string name="card_native_libs">Native libraries (%1$d)</string>
     <string name="native_libs_none">No native .so libraries found.</string>
 
+    <string name="label_sha256">SHA-256</string>
+    <string name="bundle_note">Bundle with %1$d APK files; the base APK was analyzed.</string>
+
+    <string name="card_signatures">Signatures</string>
+    <string name="sig_verified_yes">Signature verified.</string>
+    <string name="sig_verified_no">Signature could not be verified.</string>
+    <string name="sig_schemes">Schemes: %1$s</string>
+    <string name="sig_none">No signer certificates found.</string>
+
+    <string name="card_16kb">16 KiB page-size readiness</string>
+    <string name="kb16_ready">All 64-bit native libraries are compatible with 16 KiB page-size devices.</string>
+    <string name="kb16_not_ready">Some 64-bit native libraries are not compatible with 16 KiB page-size devices (see the list below).</string>
+    <string name="kb16_no_64bit">No 64-bit native libraries to check.</string>
+
+    <string name="card_declared_permissions">Declared permissions (%1$d)</string>
+    <string name="card_activities">Activities (%1$d)</string>
+    <string name="card_services">Services (%1$d)</string>
+    <string name="card_receivers">Broadcast receivers (%1$d)</string>
+    <string name="card_providers">Content providers (%1$d)</string>
+    <string name="card_metadata">Meta-data (%1$d)</string>
+    <string name="card_splits">Bundle contents (%1$d)</string>
+    <string name="exported_marker">exported</string>
+    <string name="none_found">None found.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. BloxInsight does not install, run or modify the selected file.</string>
 </resources>

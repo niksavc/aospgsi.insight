@@ -5,28 +5,45 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import com.android.apksig.ApkVerifier
+import com.bloxinsight.core.model.ApkComponent
 import com.bloxinsight.core.model.ApkInspection
+import com.bloxinsight.core.model.NativeLibraryInfo
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
-/** Read-only metadata extractor for a user-selected APK. Call from a background dispatcher. */
+/**
+ * Read-only inspector for a user-selected APK or APK bundle (.apks, .xapk, .apkm). Call from a
+ * background dispatcher.
+ */
 class ApkAnalyzer(private val context: Context) {
   fun analyze(uri: Uri): ApkInspection {
-    val tempApk = File.createTempFile("bloxinsight-analysis-", ".apk", context.cacheDir)
+    val picked = File.createTempFile("bloxinsight-picked-", ".bin", context.cacheDir)
+    var extractedBase: File? = null
     try {
-      val input =
-        context.contentResolver.openInputStream(uri)
-          ?: throw IOException("Не удалось открыть выбранный файл.")
-      input.use { source -> tempApk.outputStream().use { sink -> source.copyTo(sink) } }
+      val sha256 = copyWithSha256(uri, picked)
+
+      val bundleApks = listBundleApks(picked)
+      val apk =
+        if (bundleApks == null) {
+          picked
+        } else {
+          File.createTempFile("bloxinsight-base-", ".apk", context.cacheDir).also {
+            extractedBase = it
+            extractEntry(picked, chooseBaseApk(bundleApks), it)
+          }
+        }
 
       val info =
-        getPackageInfo(tempApk.absolutePath)
-          ?: throw IOException("Android не смог прочитать метаданные APK.")
+        getPackageInfo(apk.absolutePath)
+          ?: throw IOException("Android could not read the APK manifest.")
       val appInfo = info.applicationInfo
       if (appInfo != null) {
-        appInfo.sourceDir = tempApk.absolutePath
-        appInfo.publicSourceDir = tempApk.absolutePath
+        appInfo.sourceDir = apk.absolutePath
+        appInfo.publicSourceDir = apk.absolutePath
       }
       val label =
         try {
@@ -39,13 +56,17 @@ class ApkAnalyzer(private val context: Context) {
           info.packageName ?: "Unknown app"
         }
 
-      val nativeLibraries = readNativeLibraries(tempApk)
-      val abis = InspectionRules.abisFromNativeLibraries(nativeLibraries)
+      val libraries = inspectNativeLibraries(apk)
+      val abis = libraries.map { it.abi }.distinct().sorted()
+      val signature = verifySignatures(apk)
       val warnings = buildList {
         InspectionRules.packageNameWarning(info.packageName)?.let { add(it) }
         val unsupported = InspectionRules.unsupportedAbis(abis.toSet())
-        if (unsupported.isNotEmpty())
+        if (unsupported.isNotEmpty()) {
           add("Unrecognized ABIs: ${unsupported.sorted().joinToString()}")
+        }
+        addAll(InspectionRules.sixteenKbWarnings(libraries))
+        if (!signature.verified) add("The APK signature could not be verified.")
       }
 
       return ApkInspection(
@@ -54,17 +75,84 @@ class ApkAnalyzer(private val context: Context) {
         versionCode = getVersionCode(info),
         minSdk = appInfo?.minSdkVersion,
         targetSdk = appInfo?.targetSdkVersion,
-        signerSha256 = emptyList(), // filled in by milestone 2 (signature inspection)
+        signerSha256 = signature.certificateSha256,
         nativeAbis = abis,
         warnings = warnings,
         fileName = queryDisplayName(uri) ?: "selected.apk",
-        fileSizeBytes = tempApk.length(),
+        fileSizeBytes = picked.length(),
         appLabel = label,
         requestedPermissions = info.requestedPermissions?.toList().orEmpty().sorted(),
-        nativeLibraries = nativeLibraries,
+        nativeLibraries = libraries.map { it.path },
+        nativeLibraryDetails = libraries,
+        declaredPermissions = info.permissions?.map { it.name }.orEmpty().sorted(),
+        activities = info.activities?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
+        services = info.services?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
+        receivers = info.receivers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
+        providers = info.providers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
+        metaData = readMetaData(appInfo?.metaData),
+        sha256 = sha256,
+        signatureVerified = signature.verified,
+        signatureSchemes = signature.schemes,
+        bundleApks = bundleApks.orEmpty(),
       )
     } finally {
-      tempApk.delete()
+      picked.delete()
+      extractedBase?.delete()
+    }
+  }
+
+  /** Copies the picked document to [dest] and returns its SHA-256 as lowercase hex. */
+  private fun copyWithSha256(uri: Uri, dest: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val input =
+      context.contentResolver.openInputStream(uri)
+        ?: throw IOException("Could not open the selected file.")
+    input.use { source ->
+      dest.outputStream().use { sink ->
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+          val read = source.read(buffer)
+          if (read < 0) break
+          digest.update(buffer, 0, read)
+          sink.write(buffer, 0, read)
+        }
+      }
+    }
+    return digest.digest().toHex()
+  }
+
+  /**
+   * Returns the .apk entry names when [file] is a bundle of APKs (no AndroidManifest.xml of its
+   * own), or null when [file] is a plain APK.
+   */
+  private fun listBundleApks(file: File): List<String>? =
+    ZipFile(file).use { zip ->
+      val names = zip.entries().asSequence().map { it.name }.toList()
+      if ("AndroidManifest.xml" in names) {
+        null
+      } else {
+        val apks = names.filter { it.endsWith(".apk", ignoreCase = true) }.sorted()
+        if (apks.isEmpty()) throw IOException("The file is neither an APK nor a bundle of APKs.")
+        apks
+      }
+    }
+
+  private fun chooseBaseApk(apks: List<String>): String {
+    fun simple(name: String) = name.substringAfterLast('/')
+    return apks.firstOrNull { simple(it).equals("base.apk", ignoreCase = true) }
+      ?: apks.firstOrNull { name ->
+        val simple = simple(name)
+        !simple.startsWith("split_") && !simple.startsWith("config.")
+      }
+      ?: apks.first()
+  }
+
+  private fun extractEntry(zipFile: File, entryName: String, dest: File) {
+    ZipFile(zipFile).use { zip ->
+      val entry = zip.getEntry(entryName) ?: throw IOException("Missing entry $entryName.")
+      zip.getInputStream(entry).use { source ->
+        dest.outputStream().use { sink -> source.copyTo(sink) }
+      }
     }
   }
 
@@ -85,21 +173,87 @@ class ApkAnalyzer(private val context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode
     else info.versionCode.toLong()
 
-  private fun readNativeLibraries(apk: File): List<String> =
+  @Suppress("DEPRECATION")
+  private fun readMetaData(bundle: android.os.Bundle?): Map<String, String> {
+    if (bundle == null) return emptyMap()
+    return bundle.keySet().sorted().associateWith { key -> bundle.get(key)?.toString().orEmpty() }
+  }
+
+  private fun inspectNativeLibraries(apk: File): List<NativeLibraryInfo> =
     try {
+      val layout = ZipLayout.read(apk) { isNativeLibraryPath(it) }
       ZipFile(apk).use { zip ->
-        val entries = zip.entries()
-        buildList {
-          while (entries.hasMoreElements()) {
-            val name = entries.nextElement().name
-            if (name.startsWith("lib/") && name.endsWith(".so") && !name.endsWith("/")) add(name)
+        zip
+          .entries()
+          .asSequence()
+          .filter { isNativeLibraryPath(it.name) }
+          .map { entry ->
+            val abi = entry.name.split('/')[1]
+            val stored = entry.method == ZipEntry.STORED
+            val zipAligned =
+              if (stored) {
+                layout[entry.name]?.let { it.dataOffset % ElfReader.SIXTEEN_KB == 0L }
+              } else {
+                null
+              }
+            val elfAligned =
+              ElfReader.parse(readHead(zip, entry, ELF_HEADER_BYTES))?.let {
+                ElfReader.isLoadAlignedTo(it)
+              }
+            NativeLibraryInfo(
+              path = entry.name,
+              abi = abi,
+              is64Bit = InspectionRules.is64BitAbi(abi),
+              storedUncompressed = stored,
+              zipAlignedTo16Kb = zipAligned,
+              elfAlignedTo16Kb = elfAligned,
+            )
           }
-        }
-          .distinct()
-          .sorted()
+          .sortedBy { it.path }
+          .toList()
       }
     } catch (_: Exception) {
       emptyList()
+    }
+
+  private fun isNativeLibraryPath(name: String): Boolean =
+    name.startsWith("lib/") && name.endsWith(".so") && name.split('/').size == 3
+
+  /** Reads up to [limit] bytes from the start of a zip entry. */
+  private fun readHead(zip: ZipFile, entry: ZipEntry, limit: Int): ByteArray {
+    val buffer = ByteArray(limit)
+    var total = 0
+    zip.getInputStream(entry).use { stream ->
+      while (total < limit) {
+        val read = stream.read(buffer, total, limit - total)
+        if (read < 0) break
+        total += read
+      }
+    }
+    return buffer.copyOf(total)
+  }
+
+  private class SignatureResult(
+    val verified: Boolean,
+    val schemes: List<String>,
+    val certificateSha256: List<String>,
+  )
+
+  private fun verifySignatures(apk: File): SignatureResult =
+    try {
+      val result = ApkVerifier.Builder(apk).build().verify()
+      val schemes = buildList {
+        if (result.isVerifiedUsingV1Scheme) add("v1")
+        if (result.isVerifiedUsingV2Scheme) add("v2")
+        if (result.isVerifiedUsingV3Scheme) add("v3")
+      }
+      val certificates =
+        result.signerCertificates.orEmpty().map {
+          MessageDigest.getInstance("SHA-256").digest(it.encoded).toHex()
+        }
+      SignatureResult(result.isVerified, schemes, certificates)
+    } catch (_: Exception) {
+      SignatureResult(false, emptyList(), emptyList())
     }
 
   private fun queryDisplayName(uri: Uri): String? =
@@ -123,4 +277,10 @@ class ApkAnalyzer(private val context: Context) {
     } catch (_: Exception) {
       null
     }
+
+  private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+
+  private companion object {
+    const val ELF_HEADER_BYTES = 64 * 1024
+  }
 }

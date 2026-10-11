@@ -3,6 +3,7 @@ package com.bloxinsight.app
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bloxinsight.core.apkinspector.ApkAnalyzer
+import com.bloxinsight.core.model.ApkComponent
 import com.bloxinsight.core.model.ApkInspection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,7 +89,11 @@ fun BloxInsightAndroidApp() {
         Button(
           onClick = {
             picker.launch(
-              arrayOf("application/vnd.android.package-archive", "application/octet-stream"),
+              arrayOf(
+                "application/vnd.android.package-archive",
+                "application/zip",
+                "application/octet-stream",
+              ),
             )
           },
           enabled = !busy,
@@ -122,6 +128,7 @@ fun BloxInsightAndroidApp() {
                 stringResource(R.string.label_size),
                 apk.fileSizeBytes?.let(::formatFileSize) ?: unknown,
               )
+              InfoRow(stringResource(R.string.label_sha256), apk.sha256 ?: unknown)
               InfoRow(stringResource(R.string.label_name), apk.appLabel ?: unknown)
               InfoRow(stringResource(R.string.label_package), apk.packageName ?: unknown)
               InfoRow(stringResource(R.string.label_version), apk.versionName ?: unknown)
@@ -138,6 +145,12 @@ fun BloxInsightAndroidApp() {
                 stringResource(R.string.label_abi),
                 apk.nativeAbis.joinToString().ifEmpty { "—" },
               )
+              if (apk.isBundle) {
+                Text(
+                  stringResource(R.string.bundle_note, apk.bundleApks.size),
+                  color = MaterialTheme.colorScheme.primary,
+                )
+              }
               if (apk.isLegacyRobloxInspectionTarget) {
                 Text(
                   stringResource(R.string.roblox_detected),
@@ -149,38 +162,65 @@ fun BloxInsightAndroidApp() {
             }
           }
 
-          Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
-              verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-              Text(
-                stringResource(R.string.card_permissions, apk.requestedPermissions.size),
-                style = MaterialTheme.typography.titleLarge,
-              )
-              Text(stringResource(R.string.permissions_note))
-              if (apk.requestedPermissions.isEmpty())
-                Text(stringResource(R.string.permissions_none))
-              apk.requestedPermissions.forEach {
-                Text("• $it", style = MaterialTheme.typography.bodySmall)
-              }
+          SectionCard(stringResource(R.string.card_signatures)) {
+            when (apk.signatureVerified) {
+              true -> Text(stringResource(R.string.sig_verified_yes))
+              else -> Text(stringResource(R.string.sig_verified_no))
+            }
+            if (apk.signatureSchemes.isNotEmpty()) {
+              Text(stringResource(R.string.sig_schemes, apk.signatureSchemes.joinToString()))
+            }
+            if (apk.signerSha256.isEmpty()) Text(stringResource(R.string.sig_none))
+            apk.signerSha256.forEach {
+              Text("• SHA-256: $it", style = MaterialTheme.typography.bodySmall)
             }
           }
 
-          Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
-              verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-              Text(
-                stringResource(R.string.card_native_libs, apk.nativeLibraries.size),
-                style = MaterialTheme.typography.titleLarge,
-              )
-              if (apk.nativeLibraries.isEmpty()) Text(stringResource(R.string.native_libs_none))
-              apk.nativeLibraries.forEach {
-                Text("• $it", style = MaterialTheme.typography.bodySmall)
-              }
+          SectionCard(stringResource(R.string.card_16kb)) {
+            when (apk.sixteenKbReady) {
+              true -> Text(stringResource(R.string.kb16_ready))
+              false -> Text(stringResource(R.string.kb16_not_ready))
+              null -> Text(stringResource(R.string.kb16_no_64bit))
             }
+          }
+
+          SectionCard(stringResource(R.string.card_permissions, apk.requestedPermissions.size)) {
+            Text(stringResource(R.string.permissions_note))
+            if (apk.requestedPermissions.isEmpty()) Text(stringResource(R.string.permissions_none))
+            apk.requestedPermissions.forEach {
+              Text("• $it", style = MaterialTheme.typography.bodySmall)
+            }
+          }
+
+          ListCard(
+            stringResource(R.string.card_declared_permissions, apk.declaredPermissions.size),
+            apk.declaredPermissions,
+          )
+
+          SectionCard(stringResource(R.string.card_native_libs, apk.nativeLibraryDetails.size)) {
+            if (apk.nativeLibraryDetails.isEmpty()) Text(stringResource(R.string.native_libs_none))
+            apk.nativeLibraryDetails.forEach { lib ->
+              val elf = mark(lib.elfAlignedTo16Kb)
+              val zip = mark(lib.zipAlignedTo16Kb)
+              Text(
+                "• ${lib.path}" + if (lib.is64Bit) "  [ELF 16K: $elf, ZIP: $zip]" else "",
+                style = MaterialTheme.typography.bodySmall,
+              )
+            }
+          }
+
+          ComponentCard(R.string.card_activities, apk.activities)
+          ComponentCard(R.string.card_services, apk.services)
+          ComponentCard(R.string.card_receivers, apk.receivers)
+          ComponentCard(R.string.card_providers, apk.providers)
+
+          ListCard(
+            stringResource(R.string.card_metadata, apk.metaData.size),
+            apk.metaData.map { (key, value) -> "$key = $value" },
+          )
+
+          if (apk.isBundle) {
+            ListCard(stringResource(R.string.card_splits, apk.bundleApks.size), apk.bundleApks)
           }
         }
         Text(stringResource(R.string.safety_note), style = MaterialTheme.typography.bodySmall)
@@ -202,4 +242,41 @@ private fun InfoRow(label: String, value: String) {
     Text("$label:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(0.38f))
     Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(0.62f))
   }
+}
+
+private fun mark(value: Boolean?): String =
+  when (value) {
+    true -> "✓"
+    false -> "✗"
+    null -> "–"
+  }
+
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+  Card(modifier = Modifier.fillMaxWidth()) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Text(title, style = MaterialTheme.typography.titleLarge)
+      content()
+    }
+  }
+}
+
+@Composable
+private fun ListCard(title: String, items: List<String>) {
+  SectionCard(title) {
+    if (items.isEmpty()) Text(stringResource(R.string.none_found))
+    items.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+  }
+}
+
+@Composable
+private fun ComponentCard(@StringRes titleRes: Int, components: List<ApkComponent>) {
+  val exported = stringResource(R.string.exported_marker)
+  ListCard(
+    stringResource(titleRes, components.size),
+    components.map { if (it.exported) "${it.name} ($exported)" else it.name },
+  )
 }

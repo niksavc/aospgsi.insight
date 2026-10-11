@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inspector_title">APK Inspector</string>
+    <string name="inspector_subtitle">Только чтение: анализ манифеста, разрешений и нативных библиотек.</string>
+    <string name="pick_apk">Выбрать APK</string>
+    <string name="analyzing_button">Анализ…</string>
+
+    <string name="status_idle">Выбери APK-файл для локального анализа.</string>
+    <string name="status_analyzing">Анализ APK…</string>
+    <string name="status_done">Анализ завершён. Файл не изменялся.</string>
+    <string name="status_failed">Не удалось проанализировать APK: %1$s</string>
+    <string name="error_unknown">неизвестная ошибка</string>
+
+    <string name="card_app_info">Сведения о приложении</string>
+    <string name="label_file">Файл</string>
+    <string name="label_size">Размер</string>
+    <string name="label_name">Название</string>
+    <string name="label_package">Package ID</string>
+    <string name="label_version">Версия</string>
+    <string name="label_version_code">Version code</string>
+    <string name="label_min_sdk">Min SDK</string>
+    <string name="label_target_sdk">Target SDK</string>
+    <string name="label_abi">ABI</string>
+    <string name="value_unknown">Неизвестно</string>
+    <string name="roblox_detected">Обнаружен известный package ID Roblox.</string>
+
+    <string name="card_permissions">Запрошенные разрешения (%1$d)</string>
+    <string name="permissions_note">Это разрешения из APK-манифеста, а не список выданных пользователем разрешений.</string>
+    <string name="permissions_none">Разрешения не найдены.</string>
+
+    <string name="card_native_libs">Нативные библиотеки (%1$d)</string>
+    <string name="native_libs_none">Нативные .so библиотеки не найдены.</string>
+
+    <string name="safety_note">Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.</string>
+</resources>

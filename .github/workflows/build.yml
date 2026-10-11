@@ -24,12 +24,27 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Locate Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
 
       - name: Install Android SDK packages
         shell: bash
         run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "Android SDK: $SDK"
+          if ! command -v sdkmanager >/dev/null 2>&1; then
+            if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
+              export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
+            elif [ -x "$SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
+              export PATH="$SDK/cmdline-tools/16.0/bin:$PATH"
+            else
+              echo "ERROR: sdkmanager not found on runner"
+              exit 1
+            fi
+          fi
           sdkmanager --install \
             "platform-tools" \
             "platforms;android-36" \
@@ -37,19 +52,16 @@ jobs:
 
       - name: Accept Android SDK licenses
         shell: bash
-        run: |
-          yes | sdkmanager --licenses || true
+        run: yes | sdkmanager --licenses
 
       - name: Verify Android SDK
+        shell: bash
         run: |
           sdkmanager --list_installed
           adb version
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Check Gradle
-        run: gradle --version
 
       - name: Build debug APK
         run: gradle :androidApp:assembleDebug --stacktrace

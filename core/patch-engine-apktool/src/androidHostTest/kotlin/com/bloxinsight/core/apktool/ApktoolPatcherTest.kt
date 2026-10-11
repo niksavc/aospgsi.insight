@@ -169,9 +169,19 @@ class ApktoolPatcherTest {
       // Independent checks of the result.
       assertTrue(ApkVerifier.Builder(output).build().verify().isVerified)
 
-      val offsets = ZipOffsets.read(output).associateBy { it.name }
-      assertEquals(0L, offsets.getValue("resources.arsc").dataOffset % 4)
-      assertEquals(0L, offsets.getValue("lib/arm64-v8a/libfake.so").dataOffset % 16384)
+      val all = ZipOffsets.read(output)
+      val offsets = all.associateBy { it.name }
+      val layout = all.joinToString { "${it.name}@${it.dataOffset}/m${it.method}" }
+      assertEquals(
+        0L,
+        offsets.getValue("resources.arsc").dataOffset % 4,
+        "resources.arsc misaligned: $layout",
+      )
+      assertEquals(
+        0L,
+        offsets.getValue("lib/arm64-v8a/libfake.so").dataOffset % 16384,
+        "libfake.so misaligned: $layout",
+      )
 
       val decoded = decodeManifest(output, dir, framework)
       val doc = ManifestEditor.parse(File(decoded, "AndroidManifest.xml"))

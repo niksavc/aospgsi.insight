@@ -40,5 +40,6 @@ dependencies {
     implementation(project(":core:apk-inspector"))
     implementation(project(":integrations:backend-api"))
     implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
 }

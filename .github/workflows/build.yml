@@ -14,6 +14,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -27,44 +31,48 @@ jobs:
       - name: Locate Android SDK
         shell: bash
         run: |
-          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          find "$ANDROID_HOME" -name sdkmanager -type f 2>/dev/null | head -20
+
+      - name: Configure SDK manager
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
+            -name sdkmanager -type f 2>/dev/null | head -1)"
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::Android SDK command-line tools are missing"
+            exit 1
+          fi
+
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
 
       - name: Install Android SDK packages
         shell: bash
         run: |
-          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          echo "Android SDK: $SDK"
-          if ! command -v sdkmanager >/dev/null 2>&1; then
-            if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-              export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
-            elif [ -x "$SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
-              export PATH="$SDK/cmdline-tools/16.0/bin:$PATH"
-            else
-              echo "ERROR: sdkmanager not found on runner"
-              exit 1
-            fi
-          fi
-          sdkmanager --install \
+          "$SDKMANAGER" --install \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
 
       - name: Accept Android SDK licenses
         shell: bash
-        run: yes | sdkmanager --licenses
-
-      - name: Verify Android SDK
-        shell: bash
         run: |
-          sdkmanager --list_installed
+          set -o pipefail
+          yes | "$SDKMANAGER" --licenses
+
+      - name: Verify SDK
+        run: |
+          "$SDKMANAGER" --list_installed
           adb version
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK
-        run: gradle :androidApp:assembleDebug --stacktrace
+        run: ./gradlew :androidApp:assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

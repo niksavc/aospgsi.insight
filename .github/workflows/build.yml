@@ -70,6 +70,15 @@ jobs:
           set -o pipefail
           gradle :androidApp:assembleDebug --no-daemon --stacktrace --warning-mode all 2>&1 | tee build.log
 
+      - name: Verify APK SDK levels
+        shell: bash
+        run: |
+          apk=$(ls androidApp/build/outputs/apk/debug/*.apk | head -n 1)
+          aapt2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)
+          "$aapt2" dump badging "$apk" | grep -E "^package:|^sdkVersion|^targetSdkVersion"
+          "$aapt2" dump badging "$apk" | grep -q "^targetSdkVersion:'37'"
+          "$aapt2" dump badging "$apk" | grep -q "compileSdkVersion='37'"
+
       - name: Upload Debug APK
         if: success()
         uses: actions/upload-artifact@v6

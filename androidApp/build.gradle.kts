@@ -38,6 +38,8 @@ dependencies {
   implementation(project(":composeApp"))
   implementation(project(":core:apk-model"))
   implementation(project(":core:apk-inspector"))
+  implementation(project(":core:verification"))
+  implementation(project(":core:installer"))
   implementation(project(":integrations:backend-api"))
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))

@@ -58,5 +58,24 @@
     <string name="exported_marker">exported</string>
     <string name="none_found">Не найдено.</string>
 
+    <string name="card_install_check">Проверка перед установкой</string>
+    <string name="install_no_issues">Проблем не найдено. Android должен принять этот файл.</string>
+    <string name="install_button">Установить</string>
+    <string name="install_preparing">Подготовка установки…</string>
+    <string name="install_waiting">Ожидание системного установщика…</string>
+    <string name="install_confirm">Подтвердите установку в системном окне.</string>
+    <string name="install_success">Установлено: %1$s.</string>
+    <string name="install_failed">Не удалось установить: %1$s</string>
+    <string name="install_status_code">статус установщика %1$d</string>
+    <string name="issue_no_package_name">В APK нет имени пакета.</string>
+    <string name="issue_signature_invalid">Подпись APK отсутствует или недействительна; Android такие файлы не принимает.</string>
+    <string name="issue_signer_mismatch">%1$s уже установлен с другим ключом подписи, поэтому обновить его нельзя. Сначала удалите его (данные пропадут) или используйте другой package ID.</string>
+    <string name="issue_downgrade">Установленный version code (%1$s) новее этого файла (%2$s); Android не разрешает понижение версии.</string>
+    <string name="issue_min_sdk_too_high">Приложению нужен Android API %1$s или новее; на устройстве API %2$s.</string>
+    <string name="issue_target_sdk_too_low">Приложение нацелено на API %1$s, а эта версия Android не позволяет новую установку приложений с target ниже API %2$s. Нужен привилегированный установщик (Shizuku, root) или изменённый манифест.</string>
+    <string name="issue_no_compatible_abi">Нативные библиотеки (%1$s) не подходят к ABI устройства (%2$s).</string>
+    <string name="issue_unknown_signer">Ключа подписи %1$s нет в вашем списке доверенных; файл может быть изменён или перепакован.</string>
+    <string name="issue_16kb">Устройство использует страницы памяти 16 КиБ, а часть нативных библиотек с ними несовместима; приложение может падать при запуске.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

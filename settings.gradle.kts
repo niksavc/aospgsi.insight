@@ -24,5 +24,6 @@ include(
   ":core:apk-inspector",
   ":core:patch-engine-apktool",
   ":core:verification",
+  ":core:installer",
   ":integrations:backend-api",
 )

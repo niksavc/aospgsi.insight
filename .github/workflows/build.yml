@@ -2,106 +2,104 @@ name: BloxInsight Android Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: bloxinsight-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    name: Build Android APK
+    name: Build BloxInsight APK
     runs-on: ubuntu-latest
-
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    timeout-minutes: 45
 
     steps:
-      - name: Checkout source
+      # 1. Download repository source
+      - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up Java
+      # 2. Configure Java
+      - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Locate Android SDK manager
-        shell: bash
-        run: |
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
-            -type f -name sdkmanager 2>/dev/null | head -n 1)"
-
-          if [ -z "$SDKMANAGER" ]; then
-            echo "::error::Android SDK sdkmanager not found"
-            exit 1
-          fi
-
-          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          "$SDKMANAGER" --install \
-            "platform-tools" \
-            "platforms;android-36" \
-            "build-tools;36.0.0"
-
-      - name: Accept Android SDK licenses
-        shell: bash
-        run: |
-          set -o pipefail
-          yes | "$SDKMANAGER" --licenses
-
-      - name: Verify Android SDK
-        shell: bash
-        run: |
-          "$SDKMANAGER" --list_installed
-          adb version
-
+      # 3. Configure Gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: "8.9"
 
-      - name: Verify Gradle wrapper
+      # 4. Check project files and Gradle Wrapper
+      - name: Verify project structure
         shell: bash
         run: |
-          if [ ! -f ./gradlew ]; then
-            echo "::error::gradlew is missing from the repository root"
+          echo "Checking repository structure..."
+          pwd
+          ls -la
+
+          if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
+            echo "::error::Missing settings.gradle or settings.gradle.kts"
             exit 1
           fi
-          chmod +x ./gradlew
+
+          if [ ! -f gradlew ]; then
+            echo "::error::gradlew is missing from the repository root."
+            echo "Commit the Gradle Wrapper files before building."
+            exit 1
+          fi
+
+          if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
+            echo "::error::Missing gradle/wrapper/gradle-wrapper.properties"
+            exit 1
+          fi
+
+          chmod +x gradlew
+
+      # 5. Display Gradle and Java versions
+      - name: Verify Java and Gradle
+        run: |
+          java -version
           ./gradlew --version
 
-      - name: Build debug APK
+      # 6. Build the Android debug APK
+      - name: Build Debug APK
         shell: bash
         run: |
           set -o pipefail
           ./gradlew :androidApp:assembleDebug \
+            --no-daemon \
             --stacktrace \
-            --info \
-            --warning-mode all 2>&1 | tee gradle-build.log
+            --warning-mode all \
+            2>&1 | tee build.log
 
-      - name: Upload Gradle error log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: gradle-build.log
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Upload debug APK
+      # 7. Upload APK when the build succeeds
+      - name: Upload Debug APK
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: bloxinsight-debug
+          name: BloxInsight-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
+
+      # 8. Upload logs and reports when the build fails
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: BloxInsight-build-diagnostics
+          path: |
+            build.log
+            **/build/reports/**
+            **/build/test-results/**
+          if-no-files-found: warn
           retention-days: 7

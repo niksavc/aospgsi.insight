@@ -14,7 +14,13 @@ data class ApkInspection(
     val targetSdk: Int?,
     val signerSha256: List<String>,
     val nativeAbis: List<String>,
-    val warnings: List<String> = emptyList()
+    val warnings: List<String> = emptyList(),
+    val fileName: String? = null,
+    val fileSizeBytes: Long? = null,
+    val appLabel: String? = null,
+    val requestedPermissions: List<String> = emptyList(),
+    /** APK ZIP paths, e.g. lib/arm64-v8a/libexample.so */
+    val nativeLibraries: List<String> = emptyList()
 ) {
     val isLegacyRobloxInspectionTarget: Boolean
         get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS

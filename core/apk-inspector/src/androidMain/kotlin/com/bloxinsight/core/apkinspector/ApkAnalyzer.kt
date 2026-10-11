@@ -5,13 +5,14 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import com.bloxinsight.core.model.ApkInspection
 import java.io.File
 import java.io.IOException
 import java.util.zip.ZipFile
 
 /** Read-only metadata extractor for a user-selected APK. Call from a background dispatcher. */
 class ApkAnalyzer(private val context: Context) {
-    fun analyze(uri: Uri): ApkAnalysisResult {
+    fun analyze(uri: Uri): ApkInspection {
         val tempApk = File.createTempFile("bloxinsight-analysis-", ".apk", context.cacheDir)
         try {
             val input = context.contentResolver.openInputStream(uri)
@@ -32,17 +33,28 @@ class ApkAnalyzer(private val context: Context) {
                 info.packageName ?: "Unknown app"
             }
 
-            return ApkAnalysisResult(
+            val nativeLibraries = readNativeLibraries(tempApk)
+            val abis = InspectionRules.abisFromNativeLibraries(nativeLibraries)
+            val warnings = buildList {
+                InspectionRules.packageNameWarning(info.packageName)?.let { add(it) }
+                val unsupported = InspectionRules.unsupportedAbis(abis.toSet())
+                if (unsupported.isNotEmpty()) add("Unrecognized ABIs: ${unsupported.sorted().joinToString()}")
+            }
+
+            return ApkInspection(
+                packageName = info.packageName,
+                versionName = info.versionName,
+                versionCode = getVersionCode(info),
+                minSdk = appInfo?.minSdkVersion,
+                targetSdk = appInfo?.targetSdkVersion,
+                signerSha256 = emptyList(), // filled in by milestone 2 (signature inspection)
+                nativeAbis = abis,
+                warnings = warnings,
                 fileName = queryDisplayName(uri) ?: "selected.apk",
                 fileSizeBytes = tempApk.length(),
                 appLabel = label,
-                packageName = info.packageName ?: "Unknown",
-                versionName = info.versionName ?: "Unknown",
-                versionCode = getVersionCode(info),
-                minSdk = appInfo?.minSdkVersion ?: 0,
-                targetSdk = appInfo?.targetSdkVersion ?: 0,
                 requestedPermissions = info.requestedPermissions?.toList().orEmpty().sorted(),
-                nativeLibraries = readNativeLibraries(tempApk)
+                nativeLibraries = nativeLibraries
             )
         } finally {
             tempApk.delete()
@@ -86,25 +98,4 @@ class ApkAnalyzer(private val context: Context) {
             } else null
         }
     } catch (_: Exception) { null }
-}
-
-data class ApkAnalysisResult(
-    val fileName: String,
-    val fileSizeBytes: Long,
-    val appLabel: String,
-    val packageName: String,
-    val versionName: String,
-    val versionCode: Long,
-    val minSdk: Int,
-    val targetSdk: Int,
-    val requestedPermissions: List<String>,
-    /** APK ZIP paths, e.g. lib/arm64-v8a/libexample.so */
-    val nativeLibraries: List<String>
-) {
-    val fileSizeLabel: String
-        get() = when {
-            fileSizeBytes < 1024 -> "$fileSizeBytes B"
-            fileSizeBytes < 1024 * 1024 -> "%.1f KB".format(fileSizeBytes / 1024.0)
-            else -> "%.1f MB".format(fileSizeBytes / (1024.0 * 1024.0))
-        }
 }

@@ -32,9 +32,6 @@ fun BloxInsightApp() {
                 Button(onClick = { selectedTab = "Patch workspace" }) { Text("Patch workspace") }
                 Button(onClick = { selectedTab = "Backends" }) { Text("Execution backends") }
                 Text("Current section: $selectedTab", style = MaterialTheme.typography.titleMedium)
-                Text("Supported inspection identifiers:")
-                Text("• com.roblox.client")
-                Text("• com.roblox.roblox_client")
             }
         }
     }

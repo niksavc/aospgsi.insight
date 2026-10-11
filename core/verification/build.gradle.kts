@@ -19,11 +19,14 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:apk-model"))
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
     }
 }
 
 android {
-    namespace = "com.bloxinsight.core.patchapi"
+    namespace = "com.bloxinsight.core.verification"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     compileOptions {

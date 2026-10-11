@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,8 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.bloxinsight.core.apkinspector.ApkAnalysisResult
 import com.bloxinsight.core.apkinspector.ApkAnalyzer
+import com.bloxinsight.core.model.ApkInspection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,7 +35,7 @@ import kotlinx.coroutines.withContext
 fun BloxInsightAndroidApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var result by remember { mutableStateOf<ApkAnalysisResult?>(null) }
+    var result by remember { mutableStateOf<ApkInspection?>(null) }
     var status by remember { mutableStateOf("Выбери APK-файл для локального анализа.") }
     var busy by remember { mutableStateOf(false) }
 
@@ -86,17 +85,19 @@ fun BloxInsightAndroidApp() {
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text("Сведения о приложении", style = MaterialTheme.typography.titleLarge)
-                            InfoRow("Файл", apk.fileName)
-                            InfoRow("Размер", apk.fileSizeLabel)
-                            InfoRow("Название", apk.appLabel)
-                            InfoRow("Package ID", apk.packageName)
-                            InfoRow("Версия", apk.versionName)
-                            InfoRow("Version code", apk.versionCode.toString())
-                            InfoRow("Min SDK", apk.minSdk.toString())
-                            InfoRow("Target SDK", apk.targetSdk.toString())
-                            if (apk.packageName == "com.roblox.client" || apk.packageName == "com.roblox.roblox_client") {
+                            InfoRow("Файл", apk.fileName ?: UNKNOWN)
+                            InfoRow("Размер", apk.fileSizeBytes?.let(::formatFileSize) ?: UNKNOWN)
+                            InfoRow("Название", apk.appLabel ?: UNKNOWN)
+                            InfoRow("Package ID", apk.packageName ?: UNKNOWN)
+                            InfoRow("Версия", apk.versionName ?: UNKNOWN)
+                            InfoRow("Version code", apk.versionCode?.toString() ?: UNKNOWN)
+                            InfoRow("Min SDK", apk.minSdk?.toString() ?: UNKNOWN)
+                            InfoRow("Target SDK", apk.targetSdk?.toString() ?: UNKNOWN)
+                            InfoRow("ABI", apk.nativeAbis.joinToString().ifEmpty { "—" })
+                            if (apk.isLegacyRobloxInspectionTarget) {
                                 Text("Обнаружен известный package ID Roblox.", color = MaterialTheme.colorScheme.primary)
                             }
+                            apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
                         }
                     }
 
@@ -130,6 +131,14 @@ fun BloxInsightAndroidApp() {
             }
         }
     }
+}
+
+private const val UNKNOWN = "Неизвестно"
+
+private fun formatFileSize(bytes: Long): String = when {
+    bytes < 1024 -> "$bytes B"
+    bytes < 1024 * 1024 -> "%.1f KB".format(bytes / 1024.0)
+    else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
 }
 
 @Composable

@@ -44,6 +44,12 @@ jobs:
           test -f androidApp/build.gradle.kts || { echo 'Missing androidApp/build.gradle.kts'; exit 1; }
           gradle --version
 
+      - name: Run unit tests
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee test.log
+
       - name: Build Debug APK
         shell: bash
         run: |
@@ -66,6 +72,7 @@ jobs:
           name: BloxInsight-build-diagnostics
           path: |
             build.log
+            test.log
             **/build/reports/**
             **/build/test-results/**
           if-no-files-found: warn

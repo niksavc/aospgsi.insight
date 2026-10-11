@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
@@ -41,5 +40,6 @@ dependencies {
     implementation(project(":core:apk-inspector"))
     implementation(project(":integrations:backend-api"))
     implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
 }

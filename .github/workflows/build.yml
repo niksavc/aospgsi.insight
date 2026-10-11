@@ -2,21 +2,21 @@ name: BloxInsight Android Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: bloxinsight-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -25,27 +25,37 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-36
+            build-tools;36.0.0
 
-      # Installs/caches Gradle 8.9 so this workflow does not require gradlew.
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: yes | sdkmanager --licenses
+
+      - name: Verify Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          sdkmanager --list_installed
+          adb version
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
 
-      - name: Validate source files
-        run: |
-          test -f settings.gradle.kts
-          test -f gradle/libs.versions.toml
-          test -f androidApp/src/main/AndroidManifest.xml
+      - name: Check Gradle installation
+        run: gradle --version
 
-      - name: Build Android debug APK
+      - name: Build debug APK
         run: gradle :androidApp:assembleDebug --stacktrace
 
-      - name: Upload debug APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bloxinsight-debug

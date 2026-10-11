@@ -8,7 +8,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":core:apk-model"))
+            api(project(":core:apk-model")
         }
     }
 }

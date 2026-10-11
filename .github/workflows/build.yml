@@ -1,0 +1,36 @@
+name: BloxInsight CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bloxinsight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate project files
+        run: |
+          test -f settings.gradle.kts
+          test -f gradle/libs.versions.toml
+          test -f androidApp/src/main/AndroidManifest.xml
+      # Uncomment after generating and committing a verified Gradle wrapper
+      # and confirming task names for the selected KMP/Compose plugin versions.
+      # - name: Run tests
+      #   run: ./gradlew allTests
+      # - name: Build Android debug APK
+      #   run: ./gradlew :androidApp:assembleDebug

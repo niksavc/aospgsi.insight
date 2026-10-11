@@ -145,6 +145,12 @@ fun BloxInsightAndroidApp() {
                 stringResource(R.string.label_abi),
                 apk.nativeAbis.joinToString().ifEmpty { "—" },
               )
+              apk.multiArch?.let {
+                InfoRow(
+                  stringResource(R.string.label_multiarch),
+                  stringResource(if (it) R.string.value_yes else R.string.value_no),
+                )
+              }
               if (apk.isBundle) {
                 Text(
                   stringResource(R.string.bundle_note, apk.bundleApks.size),

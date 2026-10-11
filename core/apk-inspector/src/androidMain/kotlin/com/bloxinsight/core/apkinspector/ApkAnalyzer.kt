@@ -94,6 +94,7 @@ class ApkAnalyzer(private val context: Context) {
         signatureVerified = signature.verified,
         signatureSchemes = signature.schemes,
         bundleApks = bundleApks.orEmpty(),
+        multiArch = appInfo?.let { (it.flags and FLAG_MULTIARCH) != 0 },
       )
     } finally {
       picked.delete()
@@ -282,5 +283,8 @@ class ApkAnalyzer(private val context: Context) {
 
   private companion object {
     const val ELF_HEADER_BYTES = 64 * 1024
+
+    /** Value of the hidden ApplicationInfo.FLAG_MULTIARCH (android:multiarch), bit 31. */
+    const val FLAG_MULTIARCH = 1 shl 31
   }
 }

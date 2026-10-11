@@ -22,6 +22,9 @@
     <string name="label_target_sdk">Target SDK</string>
     <string name="label_abi">ABI</string>
     <string name="value_unknown">Неизвестно</string>
+    <string name="label_multiarch">Multiarch</string>
+    <string name="value_yes">Да</string>
+    <string name="value_no">Нет</string>
     <string name="roblox_detected">Обнаружен известный package ID Roblox.</string>
 
     <string name="card_permissions">Запрошенные разрешения (%1$d)</string>

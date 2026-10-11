@@ -36,6 +36,11 @@ data class ApkInspection(
   val signatureSchemes: List<String> = emptyList(),
   /** APK file names inside a bundle; empty when the input was a plain APK. */
   val bundleApks: List<String> = emptyList(),
+  /**
+   * Whether the manifest sets android:multiarch="true" (an app exposing an API to both 32-bit and
+   * 64-bit callers). Null when it could not be read.
+   */
+  val multiArch: Boolean? = null,
 ) {
   val isLegacyRobloxInspectionTarget: Boolean
     get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS

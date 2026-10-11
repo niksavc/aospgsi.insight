@@ -10,34 +10,36 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: bloxinsight-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
+
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v5
 
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Find Android SDK manager
+      - name: Locate Android SDK manager
         shell: bash
         run: |
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -n 1)"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
+            -type f -name sdkmanager 2>/dev/null | head -n 1)"
+
           if [ -z "$SDKMANAGER" ]; then
-            echo "::error::sdkmanager not found on the GitHub runner"
+            echo "::error::Android SDK sdkmanager not found"
             exit 1
           fi
+
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
@@ -53,7 +55,8 @@ jobs:
       - name: Accept Android SDK licenses
         shell: bash
         run: |
-          yes | "$SDKMANAGER" --licenses || test "${PIPESTATUS[1]}" -eq 0
+          set -o pipefail
+          yes | "$SDKMANAGER" --licenses
 
       - name: Verify Android SDK
         shell: bash
@@ -64,18 +67,38 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
-          gradle-version: '8.9'
+          gradle-version: "8.9"
 
-      - name: Validate project files
+      - name: Verify Gradle wrapper
+        shell: bash
         run: |
-          test -f settings.gradle.kts
-          test -f gradle/libs.versions.toml
-          test -f androidApp/src/main/AndroidManifest.xml
+          if [ ! -f ./gradlew ]; then
+            echo "::error::gradlew is missing from the repository root"
+            exit 1
+          fi
+          chmod +x ./gradlew
+          ./gradlew --version
 
-      - name: Build Android debug APK
-        run: gradle :androidApp:assembleDebug --stacktrace
+      - name: Build debug APK
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :androidApp:assembleDebug \
+            --stacktrace \
+            --info \
+            --warning-mode all 2>&1 | tee gradle-build.log
+
+      - name: Upload Gradle error log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: bloxinsight-debug

@@ -56,6 +56,14 @@ jobs:
           set -o pipefail
           gradle testAndroidHostTest --no-daemon --stacktrace 2>&1 | tee test.log
 
+      - name: Verify tests actually ran
+        shell: bash
+        run: |
+          count=$(find . -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 \
+            | xargs -0 grep -ho 'tests="[0-9]*"' | grep -o '[0-9]*' | awk '{s+=$1} END {print s+0}')
+          echo "Executed tests: $count"
+          test "$count" -ge 6
+
       - name: Build Debug APK
         shell: bash
         run: |

@@ -29,9 +29,11 @@ data class ApktoolEnvironment(
 )
 
 /**
- * Manifest-level patching pipeline: decode the manifest, apply [ApkPatch]es, rebuild with aapt2,
- * zip-align, sign and verify. Code (dex) and resources.arsc are copied through untouched, which
- * keeps this fast and avoids smali/arsc round trips. Blocking; call from a background dispatcher.
+ * Manifest-level patching pipeline: decode the manifest and resources, apply [ApkPatch]es, rebuild
+ * with aapt2, zip-align, sign and verify. Code (classes*.dex) is copied through untouched, which
+ * avoids smali round trips. Resources must be decoded and rebuilt too: Apktool cannot recompile a
+ * text manifest on its own, because the manifest refers to resources (labels, themes, icons) by
+ * name. Blocking; call from a background dispatcher.
  */
 class ApktoolPatcher(private val environment: ApktoolEnvironment) {
   fun patch(
@@ -101,9 +103,9 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
       setFrameworkDirectory(environment.frameworkDir.path)
       environment.aaptBinary?.let { setAaptBinary(it.path) }
       if (decoding) {
-        // Keep dex and resources.arsc as raw files; only the manifest is decoded.
+        // Keep dex files raw; resources are decoded so the manifest can be recompiled.
         setDecodeSources(Config.DecodeSources.NONE)
-        setDecodeResources(Config.DecodeResources.ONLY_MANIFEST)
+        setDecodeResources(Config.DecodeResources.FULL)
       }
     }
 

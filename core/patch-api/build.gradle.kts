@@ -17,13 +17,13 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":core:patch-api"))
+            api(project(":core:apk-model"))
         }
     }
 }
 
 android {
-    namespace = "com.bloxinsight.core.patchengine.apktool"
+    namespace = "com.bloxinsight.core.patchapi"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     compileOptions {

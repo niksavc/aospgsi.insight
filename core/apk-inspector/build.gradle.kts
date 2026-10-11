@@ -12,3 +12,8 @@ kotlin {
         }
     }
 }
+
+android {
+    namespace = "com.bloxinsight.core.apkinspector"
+    compileSdk = 35
+}

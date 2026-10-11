@@ -13,4 +13,13 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "BloxInsight"
-include(":composeApp", ":androidApp", ":core:apk-model", ":core:patch-api", ":core:apk-inspector", ":core:patch-engine-apktool", ":core:verification", ":integrations:backend-api")
+include(
+    ":composeApp",
+    ":androidApp",
+    ":core:apk-model",
+    ":core:patch-api",
+    ":core:apk-inspector",
+    ":core:patch-engine-apktool",
+    ":core:verification",
+    ":integrations:backend-api"
+)

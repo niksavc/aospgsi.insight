@@ -4,6 +4,20 @@ kotlin = "2.0.21"
 agp = "8.7.3"
 compose-multiplatform = "1.7.1"
 
+android-minSdk = "24"
+android-targetSdk = "35"
+android-compileSdk = "35"
+
+androidx-activity = "1.9.3"
+androidx-compose-material3 = "1.3.1"
+
+spotless = "7.2.1"
+ktlint = "1.5.0"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-compose-material3" }
+
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -11,3 +25,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

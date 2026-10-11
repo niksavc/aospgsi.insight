@@ -19,13 +19,16 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:apk-model"))
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
     }
 }
 
 android {
-    namespace = "com.bloxinsight.core.patchapi"
-    compileSdk = 35
-    defaultConfig { minSdk = 24 }
+    namespace = "com.bloxinsight.core.verification"
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    defaultConfig { minSdk = libs.versions.android.minSdk.get().toInt() }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

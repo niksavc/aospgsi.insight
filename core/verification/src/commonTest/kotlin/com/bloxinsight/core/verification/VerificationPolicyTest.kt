@@ -5,13 +5,12 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class VerificationPolicyTest {
-    private fun report(readable: Boolean, verified: Boolean) =
-        VerificationReport(
-            archiveReadable = readable,
-            signatureVerified = verified,
-            sha256 = null,
-            warnings = emptyList()
-        )
+    private fun report(readable: Boolean, verified: Boolean) = VerificationReport(
+        archiveReadable = readable,
+        signatureVerified = verified,
+        sha256 = null,
+        warnings = emptyList()
+    )
 
     @Test
     fun installAllowedOnlyWhenReadableAndSignatureVerified() {

@@ -27,8 +27,11 @@ class ApkAnalyzer(private val context: Context) {
                 appInfo.publicSourceDir = tempApk.absolutePath
             }
             val label = try {
-                if (appInfo != null) context.packageManager.getApplicationLabel(appInfo).toString()
-                else info.packageName ?: "Unknown app"
+                if (appInfo != null) {
+                    context.packageManager.getApplicationLabel(appInfo).toString()
+                } else {
+                    info.packageName ?: "Unknown app"
+                }
             } catch (_: Exception) {
                 info.packageName ?: "Unknown app"
             }
@@ -62,13 +65,12 @@ class ApkAnalyzer(private val context: Context) {
     }
 
     @Suppress("DEPRECATION")
-    private fun getPackageInfo(path: String): PackageInfo? =
-        context.packageManager.getPackageArchiveInfo(
-            path,
-            PackageManager.GET_PERMISSIONS or PackageManager.GET_ACTIVITIES or
-                PackageManager.GET_SERVICES or PackageManager.GET_RECEIVERS or
-                PackageManager.GET_PROVIDERS or PackageManager.GET_META_DATA
-        )
+    private fun getPackageInfo(path: String): PackageInfo? = context.packageManager.getPackageArchiveInfo(
+        path,
+        PackageManager.GET_PERMISSIONS or PackageManager.GET_ACTIVITIES or
+            PackageManager.GET_SERVICES or PackageManager.GET_RECEIVERS or
+            PackageManager.GET_PROVIDERS or PackageManager.GET_META_DATA
+    )
 
     @Suppress("DEPRECATION")
     private fun getVersionCode(info: PackageInfo): Long =
@@ -90,12 +92,20 @@ class ApkAnalyzer(private val context: Context) {
 
     private fun queryDisplayName(uri: Uri): String? = try {
         context.contentResolver.query(
-            uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null
+            uri,
+            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null
         )?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                 if (index >= 0) cursor.getString(index) else null
-            } else null
+            } else {
+                null
+            }
         }
-    } catch (_: Exception) { null }
+    } catch (_: Exception) {
+        null
+    }
 }

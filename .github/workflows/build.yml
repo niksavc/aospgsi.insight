@@ -28,20 +28,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Locate Android SDK
-        shell: bash
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          find "$ANDROID_HOME" -name sdkmanager -type f 2>/dev/null | head -20
-
-      - name: Configure SDK manager
+      - name: Locate Android SDK manager
         shell: bash
         run: |
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" \
-            -name sdkmanager -type f 2>/dev/null | head -1)"
+            -type f -name sdkmanager 2>/dev/null | head -n 1)"
 
           if [ -z "$SDKMANAGER" ]; then
-            echo "::error::Android SDK command-line tools are missing"
+            echo "::error::sdkmanager not found in $ANDROID_HOME"
             exit 1
           fi
 
@@ -60,16 +54,31 @@ jobs:
       - name: Accept Android SDK licenses
         shell: bash
         run: |
-          set -o pipefail
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
+          RESULT=${PIPESTATUS[1]}
+          if [ "$RESULT" -ne 0 ]; then
+            echo "::error::Android SDK license acceptance failed"
+            exit "$RESULT"
+          fi
 
-      - name: Verify SDK
+      - name: Verify Android SDK
+        shell: bash
         run: |
           "$SDKMANAGER" --list_installed
           adb version
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify Gradle wrapper
+        shell: bash
+        run: |
+          if [ ! -f ./gradlew ]; then
+            echo "::error::gradlew is missing from the repository root"
+            exit 1
+          fi
+          chmod +x ./gradlew
 
       - name: Build debug APK
         run: ./gradlew :androidApp:assembleDebug --stacktrace

@@ -41,7 +41,7 @@ class ZipAlignerTest {
     }
     val big = ZipAligner.padding(headerEnd = 70, alignment = 16384)
     assertNotNull(big)
-    assertEquals(0L, (70 + big.size) % 16384)
+    assertEquals(0L, (70L + big.size) % 16384)
   }
 
   @Test

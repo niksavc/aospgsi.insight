@@ -31,10 +31,10 @@ jobs:
           java-version: '17'
 
       # Installs a Gradle distribution without requiring gradlew in the repository.
-      - name: Set up Gradle 8.10.2
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v5
         with:
-          gradle-version: '8.10.2'
+          gradle-version: '9.3.1'
 
       - name: Verify project structure
         run: |
@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          gradle testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee test.log
+          gradle testAndroidHostTest --no-daemon --stacktrace 2>&1 | tee test.log
 
       - name: Build Debug APK
         shell: bash

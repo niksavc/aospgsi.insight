@@ -94,7 +94,7 @@ jobs:
         run: |
           for f in lint.log test.log build.log; do
             if [ -f "$f" ]; then
-              msg=$(grep -E "^e: |error|Error|FAILED|What went wrong|Caused by|Could not|wrong|Exception" "$f" | head -n 25 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
+              msg=$(grep -E "^e: |error|Error|FAILED|What went wrong|Caused by|Could not|wrong|Exception|patch failed|Failure" "$f" | head -n 25 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
               echo "::error title=$f::$msg"
             fi
           done

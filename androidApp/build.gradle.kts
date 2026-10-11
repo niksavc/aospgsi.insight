@@ -31,6 +31,8 @@ android {
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+    // Apktool uses java.nio.file, which Android only has from API 26 (minSdk is 24).
+    isCoreLibraryDesugaringEnabled = true
   }
 }
 
@@ -40,7 +42,9 @@ dependencies {
   implementation(project(":core:apk-inspector"))
   implementation(project(":core:verification"))
   implementation(project(":core:installer"))
+  implementation(project(":core:patch-engine-apktool"))
   implementation(project(":integrations:backend-api"))
+  coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.material3)

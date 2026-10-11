@@ -10,6 +10,7 @@ kotlin {
     namespace = "com.bloxinsight.core.patchengine.apktool"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
+    withHostTest {}
 
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_17)
@@ -19,6 +20,13 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       api(project(":core:patch-api"))
+    }
+    androidMain.dependencies {
+      implementation(libs.apktool.lib)
+      implementation(libs.apksig)
+    }
+    commonTest.dependencies {
+      implementation(kotlin("test"))
     }
   }
 }

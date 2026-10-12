@@ -13,10 +13,6 @@ on:
         description: 'Run the x86_64 build on an emulator'
         type: boolean
         default: false
-  # Probe builds: push to this branch to try the build without touching the main workflow.
-  push:
-    branches: [claude/aapt2]
-    paths: ['scripts/build-aapt2.sh', '.github/workflows/aapt2.yml']
 
 permissions:
   contents: read
@@ -29,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.matrix || '[{"abi":"arm64-v8a","api":30},{"abi":"armeabi-v7a","api":30},{"abi":"x86_64","api":30},{"abi":"x86","api":30}]') }}
+        include: ${{ fromJSON(inputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v5
@@ -84,7 +80,7 @@ jobs:
   smoke-test:
     name: Run aapt2 on an Android 11 emulator
     needs: aapt2
-    if: github.event_name == 'push' || inputs.smoke
+    if: inputs.smoke
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:

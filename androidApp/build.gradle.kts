@@ -28,6 +28,12 @@ android {
     generateLocaleConfig = true
   }
 
+  packaging {
+    // aapt2 ships as libaapt2.so and is run from the native library directory, so the libraries
+    // must be extracted at install time instead of being mapped from the APK.
+    jniLibs { useLegacyPackaging = true }
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17

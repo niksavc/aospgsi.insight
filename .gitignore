@@ -1,0 +1,3 @@
+
+# aapt2 binaries are built in CI (scripts/build-aapt2.sh), never committed
+androidApp/src/main/jniLibs/

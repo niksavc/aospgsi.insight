@@ -110,7 +110,7 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
   private fun verifySignature(apk: File): Boolean =
     try {
       val builder = ApkVerifier.Builder(apk)
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT in 1 until Build.VERSION_CODES.O) { // 0 on host JVM tests
         builder.setMinCheckedPlatformVersion(Build.VERSION.SDK_INT)
       }
       builder.build().verify().isVerified

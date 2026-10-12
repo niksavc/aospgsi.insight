@@ -246,7 +246,7 @@ class ApkAnalyzer(private val context: Context) {
       // apksig's v1 (JAR) verifier calls Type.getTypeName(), which exists only from API 26. On
       // Android 7.x the platform itself ignores v1 when a v2/v3 block is present, so check only
       // what this device would use.
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT in 1 until Build.VERSION_CODES.O) { // 0 on host JVM tests
         builder.setMinCheckedPlatformVersion(Build.VERSION.SDK_INT)
       }
       val result = builder.build().verify()

@@ -51,7 +51,11 @@ adb logcat -c
 
 echo "== Staging the fixture in the app's cache"
 adb push "$WORK/legacy.apk" /data/local/tmp/legacy.apk >/dev/null
-adb shell "cp /data/local/tmp/legacy.apk /data/data/$PKG/cache/patch-source.apk && chmod 644 /data/data/$PKG/cache/patch-source.apk && restorecon -R /data/data/$PKG/cache"
+# The app has not run yet, so its cache directory does not exist; create it owned by the app.
+OWNER=$(adb shell ls -ld "/data/data/$PKG" | tr -d '\r' | awk '{print $3}')
+echo "app owner: $OWNER"
+adb shell "mkdir -p /data/data/$PKG/cache && cp /data/local/tmp/legacy.apk /data/data/$PKG/cache/patch-source.apk && chown -R $OWNER:$OWNER /data/data/$PKG/cache && chmod 771 /data/data/$PKG/cache && chmod 644 /data/data/$PKG/cache/patch-source.apk && restorecon -R /data/data/$PKG/cache"
+adb shell ls -lZ "/data/data/$PKG/cache" || true
 
 echo "== Starting the patch service"
 if [ "$SDK" -ge 26 ]; then START=start-foreground-service; else START=startservice; fi

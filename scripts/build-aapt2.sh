@@ -72,6 +72,9 @@ test -x "$PROTOC"
 echo "== Building aapt2 for $ABI (API $API)"
 # 16 KiB-aligned segments: needed to execute on 16 KiB page-size kernels.
 export LDFLAGS="${LDFLAGS:-} -Wl,-z,max-page-size=16384"
+# The fmt version in this tag trips over the stricter consteval checks of recent NDK clang releases;
+# fmt only needs consteval for compile-time format string checks, so turn it off.
+export CXXFLAGS="${CXXFLAGS:-} -DFMT_CONSTEVAL="
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"
 

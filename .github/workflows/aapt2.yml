@@ -49,6 +49,7 @@ jobs:
 
       - name: Build aapt2
         if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
         env:
           WORK_DIR: ${{ runner.temp }}/aapt2
         run: |

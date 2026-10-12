@@ -11,11 +11,12 @@ class ManifestEditorTest {
   private val manifest =
     """
     <?xml version="1.0" encoding="utf-8"?>
-    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app" android:sharedUserId="com.example.uid">
       <uses-permission android:name="android.permission.INTERNET"/>
       <uses-permission android:name="android.permission.READ_CONTACTS"/>
       <uses-permission android:name="com.example.app.PRIVATE"/>
       <permission android:name="com.example.app.PRIVATE" android:protectionLevel="signature"/>
+      <permission android:name="org.shared.permission.PUSH" android:protectionLevel="signature"/>
       <application android:name=".App" android:label="@string/app_name" android:permission="com.example.app.PRIVATE">
         <activity android:name=".Main" android:parentActivityName="Home" android:exported="true"/>
         <activity-alias android:name="Alias" android:targetActivity=".Main"/>
@@ -75,10 +76,13 @@ class ManifestEditorTest {
   fun packageRenameMovesAuthoritiesAndOwnPermissions() {
     val doc = edit(ApkPatch.SetPackageName("com.example.clone"))
     assertEquals(
-      "com.example.clone.files;other.authority",
+      "com.example.clone.files;other.authority.com.example.clone",
       doc.all("provider").single().attr("authorities"),
     )
-    assertEquals("com.example.clone.PRIVATE", doc.all("permission").single().attr("name"))
+    assertEquals(
+      listOf("com.example.clone.PRIVATE", "org.shared.permission.PUSH.com.example.clone"),
+      doc.all("permission").map { it.attr("name") },
+    )
     val used = doc.all("uses-permission").mapNotNull { it.attr("name") }
     assertEquals(
       listOf(
@@ -89,6 +93,16 @@ class ManifestEditorTest {
       used,
     )
     assertEquals("com.example.clone.PRIVATE", doc.all("application").single().attr("permission"))
+  }
+
+  @Test
+  fun packageRenameDropsSharedUserId() {
+    val doc = edit(ApkPatch.SetPackageName("com.example.clone"))
+    assertNull(
+      doc.documentElement.getAttributeNS(ManifestEditor.ANDROID_NS, "sharedUserId").ifEmpty {
+        null
+      },
+    )
   }
 
   @Test

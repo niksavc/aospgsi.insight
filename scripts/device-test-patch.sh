@@ -24,7 +24,11 @@ cat > "$WORK/AndroidManifest.xml" <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.legacy">
   <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="19"/>
-  <application android:label="@string/app_name" android:hasCode="false"/>
+  <permission android:name="com.example.legacy.PRIVATE" android:protectionLevel="signature"/>
+  <permission android:name="org.shared.permission.PUSH" android:protectionLevel="signature"/>
+  <application android:label="@string/app_name" android:hasCode="false">
+    <provider android:name="com.example.legacy.Files" android:authorities="com.example.legacy.files;shared.authority" android:exported="false"/>
+  </application>
 </manifest>
 XML
 "$BT/aapt2" compile --dir "$WORK/res" -o "$WORK/res.zip"
@@ -41,6 +45,13 @@ if [ "$SDK" -ge 34 ]; then
   out=$(adb install "$WORK/legacy.apk" 2>&1 || true)
   echo "$out"
   echo "$out" | grep -q "DEPRECATED_SDK_VERSION"
+fi
+
+if [ "$SDK" -lt 34 ]; then
+  # Install the original too: the clone must then coexist with it, which fails with
+  # CONFLICTING_PROVIDER / DUPLICATE_PERMISSION if authorities or permissions are not renamed.
+  echo "== Installing the original fixture"
+  adb install "$WORK/legacy.apk"
 fi
 
 echo "== Installing AOSP GSI Insight"
@@ -95,4 +106,8 @@ adb pull "/data/data/$PKG/files/patched/com.example.legacy.apk" "$WORK/patched.a
 echo "== Installing the patched APK"
 adb install "$WORK/patched.apk"
 adb shell pm list packages | grep -q "com.example.legacy.aospgsi"
+if [ "$SDK" -lt 34 ]; then
+  adb shell pm list packages | grep -qx "package:com.example.legacy"
+  echo "original and clone are installed side by side"
+fi
 echo "device patch test passed"

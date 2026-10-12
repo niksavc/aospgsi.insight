@@ -111,8 +111,13 @@ internal object ManifestEditor {
           element.setAndroid(doc, attr, qualify(old, it))
         }
     }
+    // Authorities and permission names are system-wide: if the original is installed too, any name
+    // left unchanged is a conflict (INSTALL_FAILED_CONFLICTING_PROVIDER / DUPLICATE_PERMISSION).
+    // Names
+    // under the old package move to the new one; any other name gets the new package appended.
     fun rename(value: String): String =
-      if (value == old || value.startsWith("$old.")) newPackage + value.removePrefix(old) else value
+      if (value == old || value.startsWith("$old.")) newPackage + value.removePrefix(old)
+      else "$value.$newPackage"
 
     // 1. Class names relative to the old package must be made absolute first, otherwise they
     // would silently resolve against the new package.
@@ -136,10 +141,7 @@ internal object ManifestEditor {
       }
     }
     val definedPermissions =
-      elements(doc, "permission")
-        .mapNotNull { it.androidAttr("name") }
-        .filter { it.startsWith("$old.") }
-        .associateWith { rename(it) }
+      elements(doc, "permission").mapNotNull { it.androidAttr("name") }.associateWith { rename(it) }
     if (definedPermissions.isNotEmpty()) {
       val tags = listOf("permission", "uses-permission", "uses-permission-sdk-23")
       for (tag in tags) {
@@ -157,6 +159,11 @@ internal object ManifestEditor {
         }
       }
     }
+
+    // A shared user id ties the app to every app with the same id and signature; next to the
+    // original (signed with another key) it fails with INSTALL_FAILED_SHARED_USER_INCOMPATIBLE.
+    root.removeAttributeNS(ANDROID_NS, "sharedUserId")
+    root.removeAttributeNS(ANDROID_NS, "sharedUserLabel")
 
     root.setAttribute("package", newPackage)
   }

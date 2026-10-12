@@ -96,6 +96,12 @@ HDR
   grep -n "fdsan_compat" src/libbase/include/android-base/unique_fd.h | sed 's/^/compat: /'
 fi
 
+if [ "$API" -lt 30 ]; then
+  # liblog's own sources are compiled in, so the "introduced in API 30" markers on its newer
+  # functions do not apply: the implementations ship inside the binary.
+  find src/logging -path '*liblog/include/android/log.h' -exec sed -i 's/__INTRODUCED_IN(30)//g' {} +
+fi
+
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"
 

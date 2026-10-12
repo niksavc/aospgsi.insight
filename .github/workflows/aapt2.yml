@@ -65,7 +65,7 @@ jobs:
             msg=$(sed ':a;N;$!ba;s/\n/%0A/g' out/aapt2/${{ matrix.abi }}/BUILDINFO.txt)
             echo "::notice title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           elif [ -f build-aapt2.log ]; then
-            msg=$( { grep -E "^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            msg=$( { grep -E "^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           fi
 

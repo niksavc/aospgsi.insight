@@ -74,7 +74,8 @@ echo "== Building aapt2 for $ABI (API $API)"
 export LDFLAGS="${LDFLAGS:-} -Wl,-z,max-page-size=16384"
 # The fmt version in this tag trips over the stricter consteval checks of recent NDK clang releases;
 # fmt only needs consteval for compile-time format string checks, so turn it off.
-export CXXFLAGS="${CXXFLAGS:-} -DFMT_CONSTEVAL="
+export CXXFLAGS="${CXXFLAGS:-} -DFMT_USE_CONSTEVAL=0 -DFMT_CONSTEVAL="
+grep -n "define FMT_VERSION\|FMT_USE_CONSTEVAL\|define FMT_CONSTEVAL" src/fmtlib/include/fmt/core.h | head -n 12 | sed 's/^/fmt: /' || true
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"
 

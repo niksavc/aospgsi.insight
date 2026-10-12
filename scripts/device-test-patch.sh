@@ -33,7 +33,7 @@ keytool -genkeypair -alias fixture -keyalg RSA -keysize 2048 -validity 3650 -dna
   -keystore "$WORK/fixture.jks" -storepass password -keypass password >/dev/null 2>&1
 "$BT/apksigner" sign --ks "$WORK/fixture.jks" --ks-pass pass:password --out "$WORK/legacy.apk" \
   "$WORK/legacy-unsigned.apk"
-"$BT/aapt2" dump badging "$WORK/legacy.apk" | grep -E "^package:|^targetSdkVersion|^sdkVersion"
+"$BT/aapt2" dump badging "$WORK/legacy.apk" | grep -E "^package:|^targetSdkVersion|^(min)?[sS]dkVersion"
 "$BT/aapt2" dump badging "$WORK/legacy.apk" | grep -q "targetSdkVersion:'19'"
 
 if [ "$SDK" -ge 34 ]; then
@@ -87,10 +87,10 @@ fi
 echo "== Checking the patched APK"
 adb pull "/data/data/$PKG/files/patched/com.example.legacy.apk" "$WORK/patched.apk" >/dev/null
 "$BT/apksigner" verify --print-certs "$WORK/patched.apk" | head -n 5
-"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -E "^package:|^targetSdkVersion|^sdkVersion|^application-label"
+"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -E "^package:|^targetSdkVersion|^(min)?[sS]dkVersion|^application-label"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "package: name='com.example.legacy.bloxinsight'"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "targetSdkVersion:'24'"
-"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "sdkVersion:'16'"
+"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -qE "(min)?[sS]dkVersion:'16'"
 
 echo "== Installing the patched APK"
 adb install "$WORK/patched.apk"

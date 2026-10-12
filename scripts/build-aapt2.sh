@@ -81,16 +81,31 @@ FMT_CORE=src/fmtlib/include/fmt/core.h
 sed -i -E 's/^(#\s*)define FMT_CONSTEVAL consteval/\1define FMT_CONSTEVAL/; s/^(#\s*)define FMT_HAS_CONSTEVAL/\1define FMT_HAS_CONSTEVAL_OFF/' "$FMT_CORE"
 grep -n "FMT_CONSTEVAL\|FMT_HAS_CONSTEVAL" "$FMT_CORE" | head -n 8 | sed 's/^/fmt: /' || true
 
+# libbase calls fdsan (Android 10, API 29) unconditionally. For older API levels, supply no-op stand-ins:
+# fd ownership is then simply not tracked, which is how those Android versions behave anyway.
+if [ "$API" -lt 29 ]; then
+  cat > src/libbase/include/android-base/fdsan_compat.h <<'HDR'
+#pragma once
+#include <stdint.h>
+#include <unistd.h>
+static inline uint64_t android_fdsan_create_owner_tag(int, uint64_t) { return 0; }
+static inline void android_fdsan_exchange_owner_tag(int, uint64_t, uint64_t) {}
+static inline int android_fdsan_close_with_tag(int fd, uint64_t) { return close(fd); }
+HDR
+  sed -i '0,/^#pragma once/s//#pragma once\n#include <android-base\/fdsan_compat.h>/' src/libbase/include/android-base/unique_fd.h
+  grep -n "fdsan_compat" src/libbase/include/android-base/unique_fd.h | sed 's/^/compat: /'
+fi
+
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"
 
 BIN=$(find "build/$ABI" -type f -name aapt2 -perm -u+x | head -n 1)
 test -n "$BIN"
-STRIP=$(find "$NDK/toolchains/llvm/prebuilt" -name llvm-strip -type f | head -n 1)
+STRIP=$(find "$NDK/toolchains/llvm/prebuilt" -name llvm-strip | head -n 1)
 "$STRIP" -o "$OUT/libaapt2.so" "$BIN"
 chmod 755 "$OUT/libaapt2.so"
 
-READELF=$(find "$NDK/toolchains/llvm/prebuilt" -name llvm-readelf -type f | head -n 1)
+READELF=$(find "$NDK/toolchains/llvm/prebuilt" -name llvm-readelf | head -n 1)
 {
   echo "aosp_tag=$AOSP_TAG"
   echo "builder=$BUILDER_REPO@$BUILDER_SHA"

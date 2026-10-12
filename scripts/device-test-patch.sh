@@ -2,11 +2,11 @@
 # End-to-end check of the "Fix for this Android version" flow on a running emulator (userdebug image,
 # so `adb root` works): builds an old-target APK, lets the installed debug app patch it through its
 # PatchService (Apktool + bundled aapt2 + Keystore signing), then checks the result on the host and
-# installs it. usage: device-test-patch.sh <path-to-BloxInsight-debug.apk>
+# installs it. usage: device-test-patch.sh <path-to-AOSP-GSI-Insight-debug.apk>
 set -euo pipefail
 
-APP_APK=${1:?path to the BloxInsight debug APK}
-PKG=com.bloxinsight.manager
+APP_APK=${1:?path to the AOSP GSI Insight debug APK}
+PKG=com.aospgsi.insight
 SDK_ROOT=${ANDROID_HOME:-$ANDROID_SDK_ROOT}
 BT=$(ls -d "$SDK_ROOT"/build-tools/* | sort -V | tail -n 1)
 JAR=$(ls "$SDK_ROOT"/platforms/android-*/android.jar | sort -V | tail -n 1)
@@ -43,7 +43,7 @@ if [ "$SDK" -ge 34 ]; then
   echo "$out" | grep -q "DEPRECATED_SDK_VERSION"
 fi
 
-echo "== Installing BloxInsight"
+echo "== Installing AOSP GSI Insight"
 adb install -r -g "$APP_APK"
 adb root >/dev/null
 adb wait-for-device
@@ -59,24 +59,24 @@ adb shell ls -lZ "/data/data/$PKG/cache" || true
 
 echo "== Starting the patch service"
 if [ "$SDK" -ge 26 ]; then START=start-foreground-service; else START=startservice; fi
-adb shell am $START -n "$PKG/com.bloxinsight.app.PatchService" \
+adb shell am $START -n "$PKG/com.aospgsi.insight.app.PatchService" \
   --es source "/data/data/$PKG/cache/patch-source.apk" \
   --es package com.example.legacy \
   --ei targetSdk 24 \
-  --es newPackage com.example.legacy.bloxinsight
+  --es newPackage com.example.legacy.aospgsi
 
 result=""
 for i in $(seq 1 60); do
-  result=$(adb logcat -d -s BloxInsightPatch:I | grep -E "result=" || true)
+  result=$(adb logcat -d -s AospGsiPatch:I | grep -E "result=" || true)
   [ -n "$result" ] && break
   sleep 5
 done
 echo "--- patch service log"
-adb logcat -d -s BloxInsightPatch:I | cut -c1-300
+adb logcat -d -s AospGsiPatch:I | cut -c1-300
 if ! echo "$result" | grep -q "result=success"; then
   echo "patching did not succeed: $result"
   echo "--- warnings and errors from the whole device log (app related)"
-  adb logcat -d -v time '*:W' | grep -iE "bloxinsight|AndroidRuntime|FATAL|ForegroundService|Process: |Exception|apktool|aapt2" | cut -c1-300 | tail -n 60
+  adb logcat -d -v time '*:W' | grep -iE "aospgsi|AndroidRuntime|FATAL|ForegroundService|Process: |Exception|apktool|aapt2" | cut -c1-300 | tail -n 60
   echo "--- process deaths (events buffer)"
 adb logcat -b events -d | grep -E "am_crash|am_proc_died|am_kill|am_anr|am_proc_bound" | grep -i "$PKG" | tail -n 15 || true
 echo "--- app services"
@@ -88,11 +88,11 @@ echo "== Checking the patched APK"
 adb pull "/data/data/$PKG/files/patched/com.example.legacy.apk" "$WORK/patched.apk" >/dev/null
 "$BT/apksigner" verify --print-certs "$WORK/patched.apk" | head -n 5
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -E "^package:|^targetSdkVersion|^(min)?[sS]dkVersion|^application-label"
-"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "package: name='com.example.legacy.bloxinsight'"
+"$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "package: name='com.example.legacy.aospgsi'"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "targetSdkVersion:'24'"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -qE "(min)?[sS]dkVersion:'16'"
 
 echo "== Installing the patched APK"
 adb install "$WORK/patched.apk"
-adb shell pm list packages | grep -q "com.example.legacy.bloxinsight"
+adb shell pm list packages | grep -q "com.example.legacy.aospgsi"
 echo "device patch test passed"

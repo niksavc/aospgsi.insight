@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
-        android:label="BloxInsight"
+        android:label="AOSP GSI Insight"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
@@ -28,7 +28,7 @@
             android:foregroundServiceType="dataSync" />
 
         <receiver
-            android:name="com.bloxinsight.core.installer.InstallResultReceiver"
+            android:name="com.aospgsi.insight.core.installer.InstallResultReceiver"
             android:exported="false" />
     </application>
 </manifest>

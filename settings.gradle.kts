@@ -19,7 +19,7 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "BloxInsight"
+rootProject.name = "AOSP-GSI-Insight"
 
 include(
   ":composeApp",

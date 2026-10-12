@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.bloxinsight.core.patchapi"
+    namespace = "com.aospgsi.insight.core.patchapi"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
     withHostTest {}

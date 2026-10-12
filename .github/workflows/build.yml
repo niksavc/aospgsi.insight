@@ -1,4 +1,4 @@
-name: BloxInsight Android Build
+name: AOSP GSI Insight Android Build
 
 on:
   push:
@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: bloxinsight-build-${{ github.ref }}
+  group: aospgsi-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
       smoke_api: '24'
 
   build:
-    name: Build BloxInsight APK
+    name: Build AOSP GSI Insight APK
     needs: aapt2
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -130,7 +130,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v6
         with:
-          name: BloxInsight-debug-apk
+          name: AOSP-GSI-Insight-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
@@ -150,7 +150,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: BloxInsight-build-diagnostics
+          name: AOSP-GSI-Insight-build-diagnostics
           path: |
             build.log
             test.log
@@ -177,7 +177,7 @@ jobs:
 
       - uses: actions/download-artifact@v6
         with:
-          name: BloxInsight-debug-apk
+          name: AOSP-GSI-Insight-debug-apk
           path: debug-apk
 
       - name: Enable KVM

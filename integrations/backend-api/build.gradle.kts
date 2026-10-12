@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.bloxinsight.integrations"
+    namespace = "com.aospgsi.insight.integrations"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
 

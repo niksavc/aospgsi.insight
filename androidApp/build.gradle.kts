@@ -12,11 +12,11 @@ kotlin {
 }
 
 android {
-  namespace = "com.bloxinsight.app"
+  namespace = "com.aospgsi.insight.app"
   compileSdk = libs.versions.android.compileSdk.get().toInt()
 
   defaultConfig {
-    applicationId = "com.bloxinsight.manager"
+    applicationId = "com.aospgsi.insight"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
     versionCode = 1

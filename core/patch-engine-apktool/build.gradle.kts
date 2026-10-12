@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.bloxinsight.core.patchengine.apktool"
+    namespace = "com.aospgsi.insight.core.patchengine.apktool"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
     withHostTest {}

@@ -1,4 +1,4 @@
-# BloxInsight / RBX Insight
+# AOSP GSI Insight
 
 A Kotlin Multiplatform + Compose Android APK inspection and patch-workbench starter.
 

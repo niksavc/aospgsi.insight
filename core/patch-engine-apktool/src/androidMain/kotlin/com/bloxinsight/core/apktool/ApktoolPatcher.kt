@@ -36,6 +36,10 @@ data class ApktoolEnvironment(
  * name. Blocking; call from a background dispatcher.
  */
 class ApktoolPatcher(private val environment: ApktoolEnvironment) {
+  init {
+    prepareRuntime()
+  }
+
   fun patch(
     input: File,
     output: File,
@@ -162,6 +166,20 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
   }
 
   companion object {
+    /**
+     * Apktool was written for desktop JVMs and reads system properties that Android does not define
+     * (`os.name` made its OS detection throw a NullPointerException on a real device).
+     */
+    private fun prepareRuntime() {
+      if (System.getProperty("os.name") == null) System.setProperty("os.name", "Linux")
+      if (System.getProperty("os.arch") == null) {
+        System.setProperty("os.arch", if (android.os.Process.is64Bit()) "aarch64" else "arm")
+      }
+      if (System.getProperty("sun.arch.data.model") == null) {
+        System.setProperty("sun.arch.data.model", if (android.os.Process.is64Bit()) "64" else "32")
+      }
+    }
+
     /** Keep in sync with the apktool entry in gradle/libs.versions.toml. */
     const val APKTOOL_VERSION = "3.0.3"
   }

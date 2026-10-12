@@ -94,7 +94,7 @@ jobs:
         run: |
           for f in lint.log test.log build.log; do
             if [ -f "$f" ]; then
-              msg=$( { grep -E -A30 "What went wrong" "$f"; grep -E "^e: |^w: .*error|FAILED|Execution failed|Could not (resolve|find|determine)" "$f"; } | grep -v "^\s*at " | head -n 45 | cut -c1-500 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
+              msg=$( { grep -E -A30 "What went wrong" "$f"; grep -E "^e: |Caused by|Duplicate class|defined multiple|min-api|not supported|Learn how|^w: .*error|FAILED|Execution failed|Could not (resolve|find|determine)" "$f"; } | grep -v "^\s*at " | head -n 45 | cut -c1-500 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
               echo "::error title=$f::$msg"
             fi
           done

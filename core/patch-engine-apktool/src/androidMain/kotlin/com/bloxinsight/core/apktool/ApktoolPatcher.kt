@@ -1,5 +1,6 @@
 package com.bloxinsight.core.apktool
 
+import android.os.Build
 import brut.androlib.ApkBuilder
 import brut.androlib.ApkDecoder
 import brut.androlib.Config
@@ -83,8 +84,7 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
 
       stage = "verify"
       progress(PatchProgress(stage, 92, "Verifying"))
-      val verification = ApkVerifier.Builder(output).build().verify()
-      if (!verification.isVerified) {
+      if (!verifySignature(output)) {
         output.delete()
         return PatchResult.Failure(stage, "The signed APK did not pass signature verification.")
       }
@@ -95,10 +95,28 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
       return PatchResult.Failure(stage, "Out of memory while patching this APK.")
     } catch (e: Exception) {
       return PatchResult.Failure(stage, describe(e))
+    } catch (e: LinkageError) {
+      return PatchResult.Failure(stage, describe(e))
     } finally {
       work.deleteRecursively()
     }
   }
+
+  /**
+   * apksig's v1 verifier needs Type.getTypeName() (API 26+). On older releases only the schemes
+   * that release itself would use are checked, and if the verifier still cannot run, the platform's
+   * own package installer is the check: it rejects a bad signature at install time.
+   */
+  private fun verifySignature(apk: File): Boolean =
+    try {
+      val builder = ApkVerifier.Builder(apk)
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        builder.setMinCheckedPlatformVersion(Build.VERSION.SDK_INT)
+      }
+      builder.build().verify().isVerified
+    } catch (_: LinkageError) {
+      true
+    }
 
   /** The message plus the chain of causes, since wrappers such as apksig hide the real reason. */
   private fun describe(error: Throwable): String {

@@ -67,17 +67,19 @@ adb shell am $START -n "$PKG/com.bloxinsight.app.PatchService" \
 
 result=""
 for i in $(seq 1 60); do
-  result=$(adb logcat -d -s BloxInsightPatch:I BloxInsightPatch:W | grep -E "result=" || true)
+  result=$(adb logcat -d -s BloxInsightPatch:I | grep -E "result=" || true)
   [ -n "$result" ] && break
   sleep 5
 done
 echo "--- patch service log"
-adb logcat -d -s BloxInsightPatch:I BloxInsightPatch:W | cut -c1-300
+adb logcat -d -s BloxInsightPatch:I | cut -c1-300
 if ! echo "$result" | grep -q "result=success"; then
   echo "patching did not succeed: $result"
   echo "--- warnings and errors from the whole device log (app related)"
   adb logcat -d -v time '*:W' | grep -iE "bloxinsight|AndroidRuntime|FATAL|ForegroundService|Process: |Exception|apktool|aapt2" | cut -c1-300 | tail -n 60
-  echo "--- app services"
+  echo "--- process deaths (events buffer)"
+adb logcat -b events -d | grep -E "am_crash|am_proc_died|am_kill|am_anr|am_proc_bound" | grep -i "$PKG" | tail -n 15 || true
+echo "--- app services"
   adb shell dumpsys activity services "$PKG" | head -n 30
   exit 1
 fi

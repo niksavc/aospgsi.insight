@@ -53,7 +53,7 @@ class PatchService : Service() {
     val result =
       try {
         patch(request, source)
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         PatchResult.Failure("prepare", e.message ?: e.javaClass.simpleName)
       } finally {
         source.delete()

@@ -242,7 +242,14 @@ class ApkAnalyzer(private val context: Context) {
 
   private fun verifySignatures(apk: File): SignatureResult =
     try {
-      val result = ApkVerifier.Builder(apk).build().verify()
+      val builder = ApkVerifier.Builder(apk)
+      // apksig's v1 (JAR) verifier calls Type.getTypeName(), which exists only from API 26. On
+      // Android 7.x the platform itself ignores v1 when a v2/v3 block is present, so check only
+      // what this device would use.
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        builder.setMinCheckedPlatformVersion(Build.VERSION.SDK_INT)
+      }
+      val result = builder.build().verify()
       val schemes = buildList {
         if (result.isVerifiedUsingV1Scheme) add("v1")
         if (result.isVerifiedUsingV2Scheme) add("v2")
@@ -254,6 +261,9 @@ class ApkAnalyzer(private val context: Context) {
         }
       SignatureResult(result.isVerified, schemes, certificates)
     } catch (_: Exception) {
+      SignatureResult(false, emptyList(), emptyList())
+    } catch (_: LinkageError) {
+      // Missing platform API on an old Android release: report "not verified", never crash.
       SignatureResult(false, emptyList(), emptyList())
     }
 

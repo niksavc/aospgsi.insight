@@ -11,9 +11,10 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Rewrites a zip so that every stored (uncompressed) entry starts at an aligned offset: 4 bytes in
- * general (required for resources.arsc on Android 11+), 16 KiB for native libraries so they can be
- * mapped directly on 16 KiB page-size devices. Compressed entries are re-deflated as they are. Must
- * run before signing, because it changes the file layout.
+ * general, 16 KiB for native libraries so they can be mapped directly on 16 KiB page-size devices.
+ * Apktool's rebuild deflates everything, so resources.arsc (which Android 11+ requires stored and
+ * 4-byte aligned for apps targeting API 30+) and native libraries are stored here; other entries
+ * keep the method they have. Must run before signing, because it changes the file layout.
  */
 internal object ZipAligner {
   const val DEFAULT_ALIGNMENT = 4
@@ -32,7 +33,7 @@ internal object ZipAligner {
         for (entry in zip.entries()) {
           val copy = ZipEntry(entry.name)
           copy.time = FIXED_TIME
-          if (entry.method == ZipEntry.STORED && !entry.isDirectory) {
+          if (!entry.isDirectory && (entry.method == ZipEntry.STORED || mustStore(entry.name))) {
             copy.method = ZipEntry.STORED
             copy.size = entry.size
             copy.compressedSize = entry.size
@@ -51,8 +52,12 @@ internal object ZipAligner {
     }
   }
 
+  private fun mustStore(name: String): Boolean = name == "resources.arsc" || isNativeLib(name)
+
+  private fun isNativeLib(name: String): Boolean = name.startsWith("lib/") && name.endsWith(".so")
+
   fun alignmentFor(name: String): Int =
-    if (name.startsWith("lib/") && name.endsWith(".so")) NATIVE_LIB_ALIGNMENT else DEFAULT_ALIGNMENT
+    if (isNativeLib(name)) NATIVE_LIB_ALIGNMENT else DEFAULT_ALIGNMENT
 
   /**
    * Builds the zip "extra" bytes that push the entry data (which follows the header at [headerEnd])

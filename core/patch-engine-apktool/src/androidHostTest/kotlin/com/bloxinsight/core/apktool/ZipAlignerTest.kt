@@ -80,4 +80,34 @@ class ZipAlignerTest {
     }
     dir.deleteRecursively()
   }
+
+  @Test
+  fun deflatedResourceTableAndNativeLibsAreStoredAndAligned() {
+    val dir = tempDir()
+    val input = File(dir, "in.zip")
+    val arsc = ByteArray(2000) { (it % 7).toByte() }
+    val lib = ByteArray(3001) { (it % 13).toByte() }
+    ZipOutputStream(input.outputStream()).use {
+      it.deflated("AndroidManifest.xml", "<manifest/>".toByteArray())
+      it.deflated("resources.arsc", arsc)
+      it.deflated("lib/arm64-v8a/libz.so", lib)
+      it.deflated("assets/b.txt", "text".toByteArray())
+    }
+
+    val output = File(dir, "out.zip")
+    ZipAligner.align(input, output)
+
+    val offsets = ZipOffsets.read(output).associateBy { it.name }
+    assertEquals(ZipEntry.STORED, offsets.getValue("resources.arsc").method)
+    assertEquals(ZipEntry.STORED, offsets.getValue("lib/arm64-v8a/libz.so").method)
+    assertEquals(ZipEntry.DEFLATED, offsets.getValue("assets/b.txt").method)
+    assertEquals(0L, offsets.getValue("resources.arsc").dataOffset % 4)
+    assertEquals(0L, offsets.getValue("lib/arm64-v8a/libz.so").dataOffset % 16384)
+    ZipFile(output).use { zip ->
+      fun bytes(name: String) = zip.getInputStream(zip.getEntry(name)).use { it.readBytes() }
+      assertContentEquals(arsc, bytes("resources.arsc"))
+      assertContentEquals(lib, bytes("lib/arm64-v8a/libz.so"))
+    }
+    dir.deleteRecursively()
+  }
 }

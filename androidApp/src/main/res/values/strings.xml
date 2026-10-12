@@ -106,5 +106,12 @@
     <string name="notification_patch_failed">Fix failed</string>
     <string name="notification_patch_ready">Open AOSP GSI Insight to install it.</string>
 
+    <string name="card_proprietary">Proprietary Google software</string>
+    <string name="proprietary_body">This package is closed-source Google software (GApps). Google licenses it to device makers only, so this app does not provide, host or sell it. It only inspects and installs a file you obtained yourself; check that you are allowed to use it.</string>
+    <string name="proprietary_conflict_hint">If installing fails with a permission or provider conflict, the system image probably already contains a stub (GApps, microG) that declares the same permissions. Remove or disable that package first; renaming the permissions would break the app.</string>
+    <string name="proprietary_alternatives">Open alternatives: microG for Play Services, Aurora Store or F-Droid for apps, and the WebView that ships with AOSP.</string>
+    <string name="card_support">Support the project</string>
+    <string name="support_body">AOSP GSI Insight is free for inspecting, checking, installing and fixing a single APK. Donations pay for the manager itself; they never unlock downloads of proprietary software.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

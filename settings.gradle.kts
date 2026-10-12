@@ -30,5 +30,6 @@ include(
   ":core:patch-engine-apktool",
   ":core:verification",
   ":core:installer",
+  ":core:monetization",
   ":integrations:backend-api",
 )

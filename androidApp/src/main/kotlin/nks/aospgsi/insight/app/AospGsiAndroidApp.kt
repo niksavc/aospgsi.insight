@@ -357,6 +357,8 @@ fun AospGsiAndroidApp() {
             }
           }
 
+          ProprietaryCard(apk.packageName)
+
           val deviceInfo = device
           val check = assessment
           if (deviceInfo != null && check != null) {
@@ -466,6 +468,8 @@ fun AospGsiAndroidApp() {
             ListCard(stringResource(R.string.card_splits, apk.bundleApks.size), apk.bundleApks)
           }
         }
+        SupportCard()
+
         Text(stringResource(R.string.safety_note), style = MaterialTheme.typography.bodySmall)
       }
     }

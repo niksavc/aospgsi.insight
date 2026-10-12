@@ -93,20 +93,35 @@ if [ "$API" -lt 30 ]; then
   find src/logging -path '*liblog/include/android/log.h' -exec sed -i 's/__INTRODUCED_IN(30)//g' {} +
 fi
 
+# Prepends an include of the compat header $1 to every source or header that mentions symbol pattern $2.
+inject() {
+  local header=$1 pattern=$2
+  grep -rlE --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' \
+    "$pattern" src/libbase src/core src/native src/base/libs src/base/tools src/incremental_delivery \
+    src/logging src/libziparchive src/selinux 2>/dev/null |
+    while read -r file; do
+      sed -i "1i #include \"$header\"" "$file"
+      echo "compat: $(basename "$header") -> $file"
+    done
+}
+mkdir -p compat
+COMPAT=$PWD/compat
+
 if [ "$API" -lt 29 ]; then
-  cat > src/libbase/include/android-base/fdsan_compat.h <<'HDR'
+  cat > compat/fdsan_compat.h <<'HDR'
 #pragma once
 #include <stdint.h>
 #include <unistd.h>
 static inline uint64_t android_fdsan_create_owner_tag(int, uint64_t) { return 0; }
+static inline uint64_t android_fdsan_get_owner_tag(int) { return 0; }
 static inline void android_fdsan_exchange_owner_tag(int, uint64_t, uint64_t) {}
 static inline int android_fdsan_close_with_tag(int fd, uint64_t) { return close(fd); }
 HDR
-  sed -i '0,/^#pragma once/s//#pragma once\n#include <android-base\/fdsan_compat.h>/' src/libbase/include/android-base/unique_fd.h
+  inject "$COMPAT/fdsan_compat.h" 'android_fdsan_(create|get|exchange|close)'
 fi
 
 if [ "$API" -lt 26 ]; then
-  cat > src/libbase/properties_compat.h <<'HDR'
+  cat > compat/properties_compat.h <<'HDR'
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
@@ -128,8 +143,7 @@ static inline bool __system_property_wait(const prop_info*, uint32_t old_serial,
   return false;
 }
 HDR
-  sed -i '0,/^#include/s//#include "properties_compat.h"\n#include/' src/libbase/properties.cpp
-  grep -n "properties_compat" src/libbase/properties.cpp | sed 's/^/compat: /'
+  inject "$COMPAT/properties_compat.h" '__system_property_(read_callback|wait)\('
 fi
 
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \

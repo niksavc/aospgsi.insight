@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import com.bloxinsight.core.apktool.Aapt2Provider
 import com.bloxinsight.core.apktool.AndroidKeystoreSigningKey
 import com.bloxinsight.core.apktool.ApktoolEnvironment
@@ -58,6 +59,12 @@ class PatchService : Service() {
         source.delete()
       }
 
+    when (result) {
+      is PatchResult.Success -> Log.i(TAG, "result=success path=${result.outputPath}")
+      is PatchResult.Failure ->
+        Log.w(TAG, "result=failure stage=${result.stage} message=${result.message}")
+      PatchResult.Cancelled -> Log.i(TAG, "result=cancelled")
+    }
     val manager = getSystemService(android.app.NotificationManager::class.java)
     when (result) {
       is PatchResult.Success -> {
@@ -110,6 +117,7 @@ class PatchService : Service() {
       PatchEvents.state.value = PatchState.Running(progress.percent, progress.stage)
       if (progress.percent != lastPercent) {
         lastPercent = progress.percent
+        Log.i(TAG, "progress=${progress.percent} stage=${progress.stage}")
         manager.notify(
           PatchNotifications.NOTIFICATION_ID,
           PatchNotifications.progress(this, progress.percent, stageText(progress.stage)),
@@ -121,6 +129,9 @@ class PatchService : Service() {
   private fun stageText(stage: String): String = stageLabel(this, stage)
 
   companion object {
+    /** Logcat tag; the on-device CI test reads the result from it. */
+    const val TAG = "BloxInsightPatch"
+
     fun start(context: Context, request: PatchRequest) {
       context.startForegroundService(request.toIntent(context))
     }

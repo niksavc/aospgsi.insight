@@ -11,6 +11,10 @@ on:
         description: 'Also run the freshly built aapt2 on an Android 7 (API 24) emulator'
         type: boolean
         default: false
+      device_test:
+        description: 'Also run the whole Fix flow on emulators (Android 7 and 14)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -94,7 +98,7 @@ jobs:
             | xargs -0 grep -ho 'tests="[0-9]*"' | grep -o '[0-9]*' | awk '{s+=$1} END {print s+0}')
           echo "Executed tests: $count"
           echo "::notice title=tests::Executed tests: $count"
-          test "$count" -ge 38
+          test "$count" -ge 48
 
       - name: Build Debug APK
         shell: bash
@@ -155,3 +159,46 @@ jobs:
             **/build/test-results/**
           if-no-files-found: warn
           retention-days: 7
+
+  # Runs the real "Fix for this Android version" flow in the installed debug app on emulators:
+  # Apktool on ART, the bundled aapt2, Keystore signing, Live Update notification service.
+  device-test:
+    name: Fix flow on Android ${{ matrix.api }} emulator
+    needs: build
+    if: inputs.device_test == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [24, 34]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: BloxInsight-debug-apk
+          path: debug-apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the Fix flow on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: default
+          script: bash -o pipefail -c 'scripts/device-test-patch.sh "$(ls debug-apk/*.apk | head -n 1)" 2>&1 | tee device-test.log'
+
+      - name: Report result
+        if: always()
+        shell: bash
+        run: |
+          if [ -f device-test.log ]; then
+            msg=$(tail -n 60 device-test.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::notice title=device test API ${{ matrix.api }}::$msg"
+          fi

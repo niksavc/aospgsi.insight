@@ -5,8 +5,11 @@
 # CMake port lzhiyong/android-sdk-tools (Apache-2.0), pinned to a commit, and fetches the AOSP
 # sources at a pinned platform-tools tag.
 #
-# The result needs Android 11 (API 30) or newer: libbase and liblog use API 30 functions of the C
-# library. Building for lower levels was tried and needs invasive source changes, so it is not done.
+# AOSP's libbase/liblog assume a recent platform: they call fdsan (API 29), system property
+# callbacks (API 26) and newer liblog entry points (API 30). For lower API levels the matching
+# stand-ins are injected below (no fd ownership tracking, no property waiting, liblog's own newer
+# entry points compiled in), which is how those Android versions behave anyway and which aapt2 never
+# relies on.
 #
 # usage: scripts/build-aapt2.sh <abi> <android-api-level> <output-dir>
 #   abi: arm64-v8a | armeabi-v7a | x86_64 | x86
@@ -83,6 +86,51 @@ grep -q "max-page-size=16384" build.py
 FMT_CORE=src/fmtlib/include/fmt/core.h
 sed -i -E 's/^(#\s*)define FMT_CONSTEVAL consteval/\1define FMT_CONSTEVAL/; s/^(#\s*)define FMT_HAS_CONSTEVAL/\1define FMT_HAS_CONSTEVAL_OFF/' "$FMT_CORE"
 grep -n "FMT_CONSTEVAL\|FMT_HAS_CONSTEVAL" "$FMT_CORE" | head -n 8 | sed 's/^/fmt: /' || true
+
+if [ "$API" -lt 30 ]; then
+  # liblog's own sources are compiled in, so the "introduced in API 30" markers on its newer
+  # functions do not apply: the implementations ship inside the binary.
+  find src/logging -path '*liblog/include/android/log.h' -exec sed -i 's/__INTRODUCED_IN(30)//g' {} +
+fi
+
+if [ "$API" -lt 29 ]; then
+  cat > src/libbase/include/android-base/fdsan_compat.h <<'HDR'
+#pragma once
+#include <stdint.h>
+#include <unistd.h>
+static inline uint64_t android_fdsan_create_owner_tag(int, uint64_t) { return 0; }
+static inline void android_fdsan_exchange_owner_tag(int, uint64_t, uint64_t) {}
+static inline int android_fdsan_close_with_tag(int fd, uint64_t) { return close(fd); }
+HDR
+  sed -i '0,/^#pragma once/s//#pragma once\n#include <android-base\/fdsan_compat.h>/' src/libbase/include/android-base/unique_fd.h
+fi
+
+if [ "$API" -lt 26 ]; then
+  cat > src/libbase/properties_compat.h <<'HDR'
+#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
+#include <sys/system_properties.h>
+// Android 8 (API 26) added these; older releases only have the copying __system_property_read.
+static inline void __system_property_read_callback(
+    const prop_info* pi,
+    void (*callback)(void* cookie, const char* name, const char* value, uint32_t serial),
+    void* cookie) {
+  char name[PROP_NAME_MAX];
+  char value[PROP_VALUE_MAX];
+  __system_property_read(pi, name, value);
+  callback(cookie, name, value, 0);
+}
+static inline bool __system_property_wait(const prop_info*, uint32_t old_serial,
+                                          uint32_t* new_serial_ptr, const struct timespec*) {
+  if (new_serial_ptr != nullptr) *new_serial_ptr = old_serial;
+  return false;
+}
+HDR
+  sed -i '0,/^#include/s//#include "properties_compat.h"\n#include/' src/libbase/properties.cpp
+  grep -n "properties_compat" src/libbase/properties.cpp | sed 's/^/compat: /'
+fi
 
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"

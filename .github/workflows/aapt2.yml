@@ -13,6 +13,15 @@ on:
         description: 'Run the x86_64 build on an emulator'
         type: boolean
         default: false
+      smoke_api:
+        description: 'Android API level of the emulator (must match the x86_64 build in the matrix)'
+        type: string
+        default: '30'
+
+  # Experiment builds (other API levels, say): push to a probe/aapt2-* branch. Builds arm64-v8a and
+  # x86_64 for API 24 and smoke-tests the x86_64 binary on an API 24 emulator.
+  push:
+    branches: ['probe/aapt2-*']
 
 permissions:
   contents: read
@@ -25,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.matrix) }}
+        include: ${{ fromJSON(inputs.matrix || '[{"abi":"arm64-v8a","api":24},{"abi":"x86_64","api":24}]') }}
 
     steps:
       - uses: actions/checkout@v5
@@ -65,7 +74,7 @@ jobs:
             msg=$(sed ':a;N;$!ba;s/\n/%0A/g' out/aapt2/${{ matrix.abi }}/BUILDINFO.txt)
             echo "::notice title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           elif [ -f build-aapt2.log ]; then
-            msg=$( { grep -E "^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            msg=$( { grep -E "^compat: |^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           fi
 
@@ -78,17 +87,19 @@ jobs:
           retention-days: 30
 
   smoke-test:
-    name: Run aapt2 on an Android 11 emulator
+    name: Run aapt2 on an emulator
     needs: aapt2
-    if: inputs.smoke
+    if: inputs.smoke || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      SMOKE_API: ${{ inputs.smoke_api || '24' }}
     steps:
       - uses: actions/checkout@v5
 
       - uses: actions/download-artifact@v6
         with:
-          name: aapt2-x86_64-api30
+          name: aapt2-x86_64-api${{ env.SMOKE_API }}
           path: aapt2
 
       - name: Enable KVM
@@ -100,7 +111,7 @@ jobs:
       - name: Smoke test on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
+          api-level: ${{ env.SMOKE_API }}
           arch: x86_64
           target: default
           script: bash -o pipefail -c 'scripts/aapt2-smoke-test.sh aapt2/libaapt2.so 2>&1 | tee smoke.log'

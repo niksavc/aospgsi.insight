@@ -12,8 +12,8 @@ import java.io.File
 object Aapt2Provider {
   const val LIBRARY_NAME = "libaapt2.so"
 
-  /** The binary uses C library functions that Android only has from Android 11 (API 30). */
-  const val MIN_SDK = 30
+  /** The binary is built for Android 7.0 (API 24), the app's minSdk. */
+  const val MIN_SDK = 24
 
   fun isSupported(sdk: Int = Build.VERSION.SDK_INT): Boolean = sdk >= MIN_SDK
 

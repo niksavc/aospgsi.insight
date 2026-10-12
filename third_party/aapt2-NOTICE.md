@@ -6,9 +6,12 @@
   `platform-tools-35.0.2`, fetched from android.googlesource.com.
 - Build recipe: CMake port [lzhiyong/android-sdk-tools](https://github.com/lzhiyong/android-sdk-tools)
   (Apache-2.0), pinned to a commit, compiled with the Android NDK.
-- Modifications: only build-time patches applied by the script (protobuf CMake include path and
-  fmt's `consteval` switched off); the aapt2 sources themselves are not edited.
-- Requires Android 11 (API 30) or newer.
+- Modifications: only build-time patches applied by the script: the protobuf CMake include path,
+  fmt's `consteval` switched off, and — because the binary targets Android 7.0 (API 24) — small
+  stand-ins for C library functions that older Android lacks (fdsan, `reallocarray`, system
+  property callbacks) and the API markers on liblog's own newer functions removed. aapt2's own
+  sources are not edited.
+- Runs on Android 7.0 (API 24) or newer.
 
 ## Licenses of what is linked into the binary
 

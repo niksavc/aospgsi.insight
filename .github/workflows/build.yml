@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       smoke:
-        description: 'Also run the freshly built aapt2 on an Android 11 emulator'
+        description: 'Also run the freshly built aapt2 on an Android 7 (API 24) emulator'
         type: boolean
         default: false
 
@@ -26,8 +26,9 @@ jobs:
     name: aapt2 (AOSP)
     uses: ./.github/workflows/aapt2.yml
     with:
-      matrix: '[{"abi":"arm64-v8a","api":30},{"abi":"armeabi-v7a","api":30},{"abi":"x86_64","api":30},{"abi":"x86","api":30}]'
+      matrix: '[{"abi":"arm64-v8a","api":24},{"abi":"armeabi-v7a","api":24},{"abi":"x86_64","api":24},{"abi":"x86","api":24}]'
       smoke: ${{ inputs.smoke == true }}
+      smoke_api: '24'
 
   build:
     name: Build BloxInsight APK
@@ -62,7 +63,7 @@ jobs:
       - name: Download aapt2 binaries
         uses: actions/download-artifact@v6
         with:
-          pattern: aapt2-*-api30
+          pattern: aapt2-*-api24
           path: aapt2-binaries
 
       - name: Place aapt2 as native libraries
@@ -70,7 +71,7 @@ jobs:
         run: |
           for abi in arm64-v8a armeabi-v7a x86_64 x86; do
             mkdir -p "androidApp/src/main/jniLibs/$abi"
-            cp "aapt2-binaries/aapt2-$abi-api30/libaapt2.so" "androidApp/src/main/jniLibs/$abi/libaapt2.so"
+            cp "aapt2-binaries/aapt2-$abi-api24/libaapt2.so" "androidApp/src/main/jniLibs/$abi/libaapt2.so"
           done
           find androidApp/src/main/jniLibs -type f -exec ls -l {} +
 

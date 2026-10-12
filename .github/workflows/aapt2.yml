@@ -16,7 +16,7 @@ on:
       smoke_api:
         description: 'Android API level of the emulator (must match the x86_64 build in the matrix)'
         type: string
-        default: '30'
+        default: '24'
 
   # Experiment builds (other API levels, say): push to a probe/aapt2-* branch. Builds arm64-v8a and
   # x86_64 for API 24 and smoke-tests the x86_64 binary on an API 24 emulator.

@@ -46,6 +46,18 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+echo "== Applying build patches where they still fit this tag"
+apply() { # <dir> <patch>
+  if patch -p1 -d "$1" --forward --dry-run -s <"$2" >/dev/null 2>&1; then
+    patch -p1 -d "$1" --forward -s <"$2"
+    echo "applied $2"
+  else
+    echo "::warning::patch $2 does not apply to $AOSP_TAG, skipped"
+  fi
+}
+apply . patches/protobuf_CMakeLists.txt.patch
+apply src patches/StringPiece.h.patch
+
 echo "== Building host protoc"
 mkdir -p src/protobuf/build
 (
@@ -56,18 +68,6 @@ mkdir -p src/protobuf/build
 PROTOC=$(find "$PWD/src/protobuf/build" -maxdepth 1 -name 'protoc-*' -type f -perm -u+x | head -n 1)
 test -x "$PROTOC"
 "$PROTOC" --version
-
-echo "== Applying build patches where they still fit this tag"
-apply() { # <dir> <patch>
-  if patch -p1 -d "$1" --forward --dry-run -s <"$2" >/dev/null 2>&1; then
-    patch -p1 -d "$1" --forward -s <"$2"
-    echo "applied $2"
-  else
-    echo "::warning::patch $2 does not apply to $AOSP_TAG, skipped"
-  fi
-}
-apply src patches/StringPiece.h.patch
-apply . patches/protobuf_CMakeLists.txt.patch
 
 echo "== Building aapt2 for $ABI (API $API)"
 # 16 KiB-aligned segments: needed to execute on 16 KiB page-size kernels.

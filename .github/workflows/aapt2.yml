@@ -45,6 +45,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           go-version: stable
+          cache: false
 
       - name: Build aapt2
         if: steps.cache.outputs.cache-hit != 'true'

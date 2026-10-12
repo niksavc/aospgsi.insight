@@ -22,6 +22,9 @@
     <string name="label_target_sdk">Target SDK</string>
     <string name="label_abi">ABI</string>
     <string name="value_unknown">Неизвестно</string>
+    <string name="label_multiarch">Multiarch</string>
+    <string name="value_yes">Да</string>
+    <string name="value_no">Нет</string>
     <string name="roblox_detected">Обнаружен известный package ID Roblox.</string>
 
     <string name="card_permissions">Запрошенные разрешения (%1$d)</string>
@@ -31,5 +34,84 @@
     <string name="card_native_libs">Нативные библиотеки (%1$d)</string>
     <string name="native_libs_none">Нативные .so библиотеки не найдены.</string>
 
-    <string name="safety_note">Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.</string>
+    <string name="label_sha256">SHA-256</string>
+    <string name="bundle_note">Бандл из %1$d APK-файлов; проанализирован базовый APK.</string>
+
+    <string name="card_signatures">Подписи</string>
+    <string name="sig_verified_yes">Подпись проверена.</string>
+    <string name="sig_verified_no">Подпись не удалось проверить.</string>
+    <string name="sig_schemes">Схемы: %1$s</string>
+    <string name="sig_none">Сертификаты подписи не найдены.</string>
+
+    <string name="card_16kb">Готовность к страницам 16 КиБ</string>
+    <string name="kb16_ready">Все 64-битные нативные библиотеки совместимы с устройствами со страницей 16 КиБ.</string>
+    <string name="kb16_not_ready">Часть 64-битных нативных библиотек несовместима с устройствами со страницей 16 КиБ (см. список ниже).</string>
+    <string name="kb16_no_64bit">Нет 64-битных нативных библиотек для проверки.</string>
+
+    <string name="card_declared_permissions">Объявленные разрешения (%1$d)</string>
+    <string name="card_activities">Activity (%1$d)</string>
+    <string name="card_services">Службы (%1$d)</string>
+    <string name="card_receivers">Broadcast-приёмники (%1$d)</string>
+    <string name="card_providers">Content-провайдеры (%1$d)</string>
+    <string name="card_metadata">Meta-data (%1$d)</string>
+    <string name="card_splits">Состав бандла (%1$d)</string>
+    <string name="exported_marker">exported</string>
+    <string name="none_found">Не найдено.</string>
+
+    <string name="card_install_check">Проверка перед установкой</string>
+    <string name="install_no_issues">Проблем не найдено. Android должен принять этот файл.</string>
+    <string name="install_button">Установить</string>
+    <string name="install_preparing">Подготовка установки…</string>
+    <string name="install_waiting">Ожидание системного установщика…</string>
+    <string name="install_confirm">Подтвердите установку в системном окне.</string>
+    <string name="install_success">Установлено: %1$s.</string>
+    <string name="install_failed">Не удалось установить: %1$s</string>
+    <string name="install_status_code">статус установщика %1$d</string>
+    <string name="issue_no_package_name">В APK нет имени пакета.</string>
+    <string name="issue_signature_invalid">Подпись APK отсутствует или недействительна; Android такие файлы не принимает.</string>
+    <string name="issue_signer_mismatch">%1$s уже установлен с другим ключом подписи, поэтому обновить его нельзя. Сначала удалите его (данные пропадут) или используйте другой package ID.</string>
+    <string name="issue_downgrade">Установленный version code (%1$s) новее этого файла (%2$s); Android не разрешает понижение версии.</string>
+    <string name="issue_min_sdk_too_high">Приложению нужен Android API %1$s или новее; на устройстве API %2$s.</string>
+    <string name="issue_target_sdk_too_low">Приложение нацелено на API %1$s, а эта версия Android не позволяет новую установку приложений с target ниже API %2$s. Нужен привилегированный установщик (Shizuku, root) или изменённый манифест.</string>
+    <string name="issue_no_compatible_abi">Нативные библиотеки (%1$s) не подходят к ABI устройства (%2$s).</string>
+    <string name="issue_unknown_signer">Ключа подписи %1$s нет в вашем списке доверенных; файл может быть изменён или перепакован.</string>
+    <string name="issue_16kb">Устройство использует страницы памяти 16 КиБ, а часть нативных библиотек с ними несовместима; приложение может падать при запуске.</string>
+
+    <string name="card_fix">Исправление для этой версии Android</string>
+    <string name="fix_intro">AOSP GSI Insight может пересобрать этот APK так, чтобы Android его принял, и подписать ключом, который хранится на этом устройстве. Выбранный файл не изменяется. Изменения:</string>
+    <string name="fix_change_target_sdk">Поднять target SDK с %1$d до %2$d.</string>
+    <string name="fix_change_package">Установить под новым package ID: %1$s</string>
+    <string name="fix_nothing_but_clone">Сам файл уже подходит этой версии Android. Его всё равно можно поставить рядом с оригиналом:</string>
+    <string name="fix_clone_toggle">Установить рядом с оригиналом (новый package ID, отдельные данные)</string>
+    <string name="fix_replace_warning">Без нового package ID приложение должно заменить установленный оригинал, а это возможно только при одинаковом ключе подписи. Иначе сначала удалите оригинал (его данные пропадут).</string>
+    <string name="fix_target_sdk_warning">Повышение target SDK меняет поведение приложения в Android (runtime-разрешения, фоновые ограничения, доступ к хранилищу). Старое приложение может падать или терять функции.</string>
+    <string name="fix_key_note">Ключ подписи создаётся и хранится на этом устройстве. Если удалить AOSP GSI Insight или сбросить устройство, приложения, исправленные этим ключом, нельзя будет обновить новыми исправленными сборками, их придётся поставить заново.</string>
+    <string name="fix_no_aapt2">Компилятор ресурсов (aapt2) не входит в эту сборку, поэтому исправление недоступно.</string>
+    <string name="fix_bundle_unavailable">Бандлы (.apks, .xapk, .apkm) пока нельзя исправлять: все части должны подписываться вместе.</string>
+    <string name="fix_button">Исправить</string>
+    <string name="fix_running">Исправление…</string>
+    <string name="fix_failed">Не удалось исправить (%1$s): %2$s</string>
+    <string name="patched_note">Показан исправленный APK, который AOSP GSI Insight только что собрал и подписал.</string>
+    <string name="patch_stage_decode">Чтение APK</string>
+    <string name="patch_stage_patch">Применение изменений</string>
+    <string name="patch_stage_build">Пересборка</string>
+    <string name="patch_stage_align">Выравнивание</string>
+    <string name="patch_stage_sign">Подпись</string>
+    <string name="patch_stage_verify">Проверка</string>
+    <string name="patch_stage_done">Готово</string>
+    <string name="patch_stage_working">Работа</string>
+    <string name="notification_channel_patch">Ход исправления</string>
+    <string name="notification_patch_title">Исправление APK</string>
+    <string name="notification_patch_done">APK исправлен</string>
+    <string name="notification_patch_failed">Не удалось исправить</string>
+    <string name="notification_patch_ready">Откройте AOSP GSI Insight, чтобы установить.</string>
+
+    <string name="card_proprietary">Проприетарное ПО Google</string>
+    <string name="proprietary_body">Этот пакет — закрытое программное обеспечение Google (GApps). Google лицензирует его только производителям устройств, поэтому приложение не предоставляет, не размещает и не продаёт его. Оно лишь анализирует и устанавливает файл, который вы получили сами; убедитесь, что вам разрешено им пользоваться.</string>
+    <string name="proprietary_conflict_hint">Если установка падает с конфликтом разрешений или провайдера, в образе системы, скорее всего, уже есть заглушка (GApps, microG), которая объявляет те же разрешения. Сначала удалите или отключите её; переименование разрешений сломает приложение.</string>
+    <string name="proprietary_alternatives">Открытые альтернативы: microG вместо Play Services, Aurora Store или F-Droid для приложений, WebView из состава AOSP.</string>
+    <string name="card_support">Поддержать проект</string>
+    <string name="support_body">AOSP GSI Insight бесплатен для анализа, проверки, установки и исправления одного APK. Пожертвования идут на сам менеджер и никогда не открывают загрузку проприетарного ПО.</string>
+
+    <string name="safety_note">Безопасность: APK анализируется локально. AOSP GSI Insight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

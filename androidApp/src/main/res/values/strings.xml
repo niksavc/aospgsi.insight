@@ -22,6 +22,9 @@
     <string name="label_target_sdk">Target SDK</string>
     <string name="label_abi">ABI</string>
     <string name="value_unknown">Unknown</string>
+    <string name="label_multiarch">Multiarch</string>
+    <string name="value_yes">Yes</string>
+    <string name="value_no">No</string>
     <string name="roblox_detected">Known Roblox package ID detected.</string>
 
     <string name="card_permissions">Requested permissions (%1$d)</string>
@@ -31,5 +34,84 @@
     <string name="card_native_libs">Native libraries (%1$d)</string>
     <string name="native_libs_none">No native .so libraries found.</string>
 
-    <string name="safety_note">Security: the APK is analyzed locally. BloxInsight does not install, run or modify the selected file.</string>
+    <string name="label_sha256">SHA-256</string>
+    <string name="bundle_note">Bundle with %1$d APK files; the base APK was analyzed.</string>
+
+    <string name="card_signatures">Signatures</string>
+    <string name="sig_verified_yes">Signature verified.</string>
+    <string name="sig_verified_no">Signature could not be verified.</string>
+    <string name="sig_schemes">Schemes: %1$s</string>
+    <string name="sig_none">No signer certificates found.</string>
+
+    <string name="card_16kb">16 KiB page-size readiness</string>
+    <string name="kb16_ready">All 64-bit native libraries are compatible with 16 KiB page-size devices.</string>
+    <string name="kb16_not_ready">Some 64-bit native libraries are not compatible with 16 KiB page-size devices (see the list below).</string>
+    <string name="kb16_no_64bit">No 64-bit native libraries to check.</string>
+
+    <string name="card_declared_permissions">Declared permissions (%1$d)</string>
+    <string name="card_activities">Activities (%1$d)</string>
+    <string name="card_services">Services (%1$d)</string>
+    <string name="card_receivers">Broadcast receivers (%1$d)</string>
+    <string name="card_providers">Content providers (%1$d)</string>
+    <string name="card_metadata">Meta-data (%1$d)</string>
+    <string name="card_splits">Bundle contents (%1$d)</string>
+    <string name="exported_marker">exported</string>
+    <string name="none_found">None found.</string>
+
+    <string name="card_install_check">Install check</string>
+    <string name="install_no_issues">No problems found. Android is expected to accept this file.</string>
+    <string name="install_button">Install</string>
+    <string name="install_preparing">Preparing installation…</string>
+    <string name="install_waiting">Waiting for the system installer…</string>
+    <string name="install_confirm">Confirm the installation in the system dialog.</string>
+    <string name="install_success">Installed %1$s.</string>
+    <string name="install_failed">Installation failed: %1$s</string>
+    <string name="install_status_code">installer status %1$d</string>
+    <string name="issue_no_package_name">The APK has no package name.</string>
+    <string name="issue_signature_invalid">The APK signature is missing or invalid; Android refuses such files.</string>
+    <string name="issue_signer_mismatch">%1$s is already installed with a different signing key, so it cannot be updated. Uninstall it first (its data is lost) or use a different package ID.</string>
+    <string name="issue_downgrade">The installed version code (%1$s) is newer than this file (%2$s); Android does not allow downgrades.</string>
+    <string name="issue_min_sdk_too_high">This app needs Android API %1$s or newer; this device runs API %2$s.</string>
+    <string name="issue_target_sdk_too_low">This app targets API %1$s, but this Android version refuses new installs of apps targeting below API %2$s. A privileged installer (Shizuku, root) or a patched manifest is needed.</string>
+    <string name="issue_no_compatible_abi">The native libraries (%1$s) do not match this device\'s ABIs (%2$s).</string>
+    <string name="issue_unknown_signer">The signing key of %1$s is not in your trusted list; the file may be modified or repackaged.</string>
+    <string name="issue_16kb">This device uses 16 KiB memory pages and some native libraries are not 16 KiB compatible; the app may crash on launch.</string>
+
+    <string name="card_fix">Fix for this Android version</string>
+    <string name="fix_intro">AOSP GSI Insight can rebuild this APK so Android accepts it, and sign it with a key that stays on this device. The file you picked is not modified. Changes:</string>
+    <string name="fix_change_target_sdk">Raise the target SDK from %1$d to %2$d.</string>
+    <string name="fix_change_package">Install under a new package ID: %1$s</string>
+    <string name="fix_nothing_but_clone">The file itself already meets this Android version\'s requirements. You can still install it next to the original:</string>
+    <string name="fix_clone_toggle">Install next to the original (new package ID, separate data)</string>
+    <string name="fix_replace_warning">Without a new package ID the app would have to replace the installed original, which only works if both are signed with the same key. Otherwise uninstall the original first (its data is lost).</string>
+    <string name="fix_target_sdk_warning">Raising the target SDK changes how Android treats the app (runtime permissions, background limits, storage access). Old apps may crash or lose features.</string>
+    <string name="fix_key_note">The signing key is created and kept on this device. If you uninstall AOSP GSI Insight or reset the device, apps patched with it can no longer be updated by new patched builds; they would have to be reinstalled.</string>
+    <string name="fix_no_aapt2">The resource compiler (aapt2) is not part of this build, so fixing is unavailable.</string>
+    <string name="fix_bundle_unavailable">Split bundles (.apks, .xapk, .apkm) cannot be fixed yet: all parts must be signed together.</string>
+    <string name="fix_button">Fix</string>
+    <string name="fix_running">Fixing…</string>
+    <string name="fix_failed">Fix failed (%1$s): %2$s</string>
+    <string name="patched_note">Showing the fixed APK that AOSP GSI Insight just built and signed.</string>
+    <string name="patch_stage_decode">Reading the APK</string>
+    <string name="patch_stage_patch">Applying changes</string>
+    <string name="patch_stage_build">Rebuilding</string>
+    <string name="patch_stage_align">Aligning</string>
+    <string name="patch_stage_sign">Signing</string>
+    <string name="patch_stage_verify">Verifying</string>
+    <string name="patch_stage_done">Done</string>
+    <string name="patch_stage_working">Working</string>
+    <string name="notification_channel_patch">Patch progress</string>
+    <string name="notification_patch_title">Fixing APK</string>
+    <string name="notification_patch_done">APK fixed</string>
+    <string name="notification_patch_failed">Fix failed</string>
+    <string name="notification_patch_ready">Open AOSP GSI Insight to install it.</string>
+
+    <string name="card_proprietary">Proprietary Google software</string>
+    <string name="proprietary_body">This package is closed-source Google software (GApps). Google licenses it to device makers only, so this app does not provide, host or sell it. It only inspects and installs a file you obtained yourself; check that you are allowed to use it.</string>
+    <string name="proprietary_conflict_hint">If installing fails with a permission or provider conflict, the system image probably already contains a stub (GApps, microG) that declares the same permissions. Remove or disable that package first; renaming the permissions would break the app.</string>
+    <string name="proprietary_alternatives">Open alternatives: microG for Play Services, Aurora Store or F-Droid for apps, and the WebView that ships with AOSP.</string>
+    <string name="card_support">Support the project</string>
+    <string name="support_body">AOSP GSI Insight is free for inspecting, checking, installing and fixing a single APK. Donations pay for the manager itself; they never unlock downloads of proprietary software.</string>
+
+    <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

@@ -1,4 +1,4 @@
-name: BloxInsight Android Build
+name: AOSP GSI Insight Android Build
 
 on:
   push:
@@ -6,17 +6,37 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      smoke:
+        description: 'Also run the freshly built aapt2 on an Android 7 (API 24) emulator'
+        type: boolean
+        default: false
+      device_test:
+        description: 'Also run the whole Fix flow on emulators (Android 7 and 14)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: bloxinsight-build-${{ github.ref }}
+  group: aospgsi-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # aapt2 for Android, built from AOSP sources (scripts/build-aapt2.sh). Cached per script version,
+  # so the compile only runs when the script or its pins change.
+  aapt2:
+    name: aapt2 (AOSP)
+    uses: ./.github/workflows/aapt2.yml
+    with:
+      matrix: '[{"abi":"arm64-v8a","api":24},{"abi":"armeabi-v7a","api":24},{"abi":"x86_64","api":24},{"abi":"x86","api":24}]'
+      smoke: ${{ inputs.smoke == true }}
+      smoke_api: '24'
+
   build:
-    name: Build BloxInsight APK
+    name: Build AOSP GSI Insight APK
+    needs: aapt2
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -44,7 +64,22 @@ jobs:
           test -f androidApp/build.gradle.kts || { echo 'Missing androidApp/build.gradle.kts'; exit 1; }
           gradle --version
 
-      - name: Check formatting (Spotless / ktlint)
+      - name: Download aapt2 binaries
+        uses: actions/download-artifact@v6
+        with:
+          pattern: aapt2-*-api24
+          path: aapt2-binaries
+
+      - name: Place aapt2 as native libraries
+        shell: bash
+        run: |
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            mkdir -p "androidApp/src/main/jniLibs/$abi"
+            cp "aapt2-binaries/aapt2-$abi-api24/libaapt2.so" "androidApp/src/main/jniLibs/$abi/libaapt2.so"
+          done
+          find androidApp/src/main/jniLibs -type f -exec ls -l {} +
+
+      - name: Check formatting (Spotless / ktfmt)
         shell: bash
         run: |
           set -o pipefail
@@ -62,7 +97,8 @@ jobs:
           count=$(find . -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 \
             | xargs -0 grep -ho 'tests="[0-9]*"' | grep -o '[0-9]*' | awk '{s+=$1} END {print s+0}')
           echo "Executed tests: $count"
-          test "$count" -ge 6
+          echo "::notice title=tests::Executed tests: $count"
+          test "$count" -ge 48
 
       - name: Build Debug APK
         shell: bash
@@ -70,20 +106,51 @@ jobs:
           set -o pipefail
           gradle :androidApp:assembleDebug --no-daemon --stacktrace --warning-mode all 2>&1 | tee build.log
 
+      - name: Verify APK SDK levels
+        shell: bash
+        run: |
+          apk=$(ls androidApp/build/outputs/apk/debug/*.apk | head -n 1)
+          aapt2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)
+          "$aapt2" dump badging "$apk" | grep -E "^package:|^sdkVersion|^targetSdkVersion"
+          "$aapt2" dump badging "$apk" | grep -q "^targetSdkVersion:'37'"
+          "$aapt2" dump badging "$apk" | grep -q "compileSdkVersion='37'"
+
+      - name: Verify aapt2 is packaged for every ABI
+        shell: bash
+        run: |
+          apk=$(ls androidApp/build/outputs/apk/debug/*.apk | head -n 1)
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            unzip -l "$apk" | grep -q "lib/$abi/libaapt2.so" || { echo "missing lib/$abi/libaapt2.so"; exit 1; }
+          done
+          # aapt2 is executed from the native library directory, so it must be extracted at install.
+          "$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)" dump xmltree "$apk" --file AndroidManifest.xml \
+            | grep -q "extractNativeLibs.*=true"
+
       - name: Upload Debug APK
         if: success()
         uses: actions/upload-artifact@v6
         with:
-          name: BloxInsight-debug-apk
+          name: AOSP-GSI-Insight-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Report failure details as annotations
+        if: failure()
+        shell: bash
+        run: |
+          for f in lint.log test.log build.log; do
+            if [ -f "$f" ]; then
+              msg=$( { grep -E -A30 "What went wrong" "$f"; grep -E "^e: |Caused by|Duplicate class|defined multiple|min-api|not supported|Learn how|^w: .*error|FAILED|Execution failed|Could not (resolve|find|determine)" "$f"; } | grep -v "^\s*at " | head -n 45 | cut -c1-500 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
+              echo "::error title=$f::$msg"
+            fi
+          done
 
       - name: Upload build diagnostics
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: BloxInsight-build-diagnostics
+          name: AOSP-GSI-Insight-build-diagnostics
           path: |
             build.log
             test.log
@@ -92,3 +159,46 @@ jobs:
             **/build/test-results/**
           if-no-files-found: warn
           retention-days: 7
+
+  # Runs the real "Fix for this Android version" flow in the installed debug app on emulators:
+  # Apktool on ART, the bundled aapt2, Keystore signing, Live Update notification service.
+  device-test:
+    name: Fix flow on Android ${{ matrix.api }} emulator
+    needs: build
+    if: inputs.device_test == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [24, 29, 34]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-debug-apk
+          path: debug-apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the Fix flow on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: default
+          script: bash -o pipefail -c 'scripts/device-test-patch.sh "$(ls debug-apk/*.apk | head -n 1)" 2>&1 | tee device-test.log'
+
+      - name: Report result
+        if: always()
+        shell: bash
+        run: |
+          if [ -f device-test.log ]; then
+            msg=$(tail -n 60 device-test.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::notice title=device test API ${{ matrix.api }}::$msg"
+          fi

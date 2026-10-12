@@ -2,7 +2,7 @@
 
 This is a research checklist and architecture mapping, not a verified source-code audit.
 
-| Project | Inspect for | BloxInsight use |
+| Project | Inspect for | AOSP GSI Insight use |
 |---|---|---|
 | Universal ReVanced Manager | Patch profiles, workflow, patch selection | Workflow reference |
 | Morphe Manager | Patch-runtime integration | Patching reference |

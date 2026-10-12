@@ -8,16 +8,23 @@ android-minSdk = "24"
 android-targetSdk = "37"
 android-compileSdk = "37"
 
+apktool = "3.0.3"
+desugar-jdk-libs = "2.1.5"
+
 androidx-activity = "1.9.3"
 androidx-compose-bom = "2026.08.00"
 
-spotless = "7.2.1"
-ktlint = "1.5.0"
+spotless = "8.10.4"
+ktfmt = "0.65"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidx-compose-bom" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+apktool-lib = { module = "org.apktool:apktool-lib", version.ref = "apktool" }
+desugar-jdk-libs-nio = { module = "com.android.tools:desugar_jdk_libs_nio", version.ref = "desugar-jdk-libs" }
+# apksig is versioned together with the Android Gradle plugin.
+apksig = { module = "com.android.tools.build:apksig", version.ref = "agp" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

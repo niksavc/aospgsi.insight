@@ -1,0 +1,126 @@
+name: Build aapt2 for Android
+
+# Builds aapt2 from AOSP sources (see scripts/build-aapt2.sh). Reusable: the main build calls it and
+# caches the result, so the long compile only runs when the script, tag or pins change.
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        description: 'JSON array of {"abi": ..., "api": ...}'
+        type: string
+        required: true
+      smoke:
+        description: 'Run the x86_64 build on an emulator'
+        type: boolean
+        default: false
+      smoke_api:
+        description: 'Android API level of the emulator (must match the x86_64 build in the matrix)'
+        type: string
+        default: '24'
+
+  # Experiment builds (other API levels, say): push to a probe/aapt2-* branch. Builds arm64-v8a and
+  # x86_64 for API 24 and smoke-tests the x86_64 binary on an API 24 emulator.
+  push:
+    branches: ['probe/aapt2-*']
+
+permissions:
+  contents: read
+
+jobs:
+  aapt2:
+    name: aapt2 ${{ matrix.abi }} (API ${{ matrix.api }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.matrix || '[{"abi":"arm64-v8a","api":24},{"abi":"x86_64","api":24}]') }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Restore cached binary
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: out/aapt2/${{ matrix.abi }}
+          key: aapt2-${{ matrix.abi }}-api${{ matrix.api }}-${{ hashFiles('scripts/build-aapt2.sh') }}
+
+      - name: Install build dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ninja-build bison flex python3-requests
+
+      - uses: actions/setup-go@v5
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Build aapt2
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          WORK_DIR: ${{ runner.temp }}/aapt2
+        run: |
+          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_ROOT}"
+          echo "NDK: $ANDROID_NDK_HOME"
+          scripts/build-aapt2.sh "${{ matrix.abi }}" "${{ matrix.api }}" "out/aapt2/${{ matrix.abi }}" 2>&1 | tee build-aapt2.log
+
+      - name: Report build info and failures
+        if: always()
+        shell: bash
+        run: |
+          if [ -f out/aapt2/${{ matrix.abi }}/BUILDINFO.txt ]; then
+            msg=$(sed ':a;N;$!ba;s/\n/%0A/g' out/aapt2/${{ matrix.abi }}/BUILDINFO.txt)
+            echo "::notice title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
+          elif [ -f build-aapt2.log ]; then
+            msg=$( { grep -E "^compat: |^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
+          fi
+
+      - uses: actions/upload-artifact@v6
+        if: success()
+        with:
+          name: aapt2-${{ matrix.abi }}-api${{ matrix.api }}
+          path: out/aapt2/${{ matrix.abi }}
+          if-no-files-found: error
+          retention-days: 30
+
+  smoke-test:
+    name: Run aapt2 on an emulator
+    needs: aapt2
+    if: inputs.smoke || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SMOKE_API: ${{ inputs.smoke_api || '24' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: aapt2-x86_64-api${{ env.SMOKE_API }}
+          path: aapt2
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.SMOKE_API }}
+          arch: x86_64
+          target: default
+          script: bash -o pipefail -c 'scripts/aapt2-smoke-test.sh aapt2/libaapt2.so 2>&1 | tee smoke.log'
+
+      - name: Report smoke test result
+        if: always()
+        shell: bash
+        run: |
+          if [ -f smoke.log ]; then
+            msg=$(tail -n 40 smoke.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::notice title=aapt2 smoke test::$msg"
+          fi

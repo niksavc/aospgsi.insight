@@ -1,4 +1,4 @@
-# BloxInsight / RBX Insight
+# AOSP GSI Insight
 
 A Kotlin Multiplatform + Compose Android APK inspection and patch-workbench starter.
 
@@ -42,3 +42,5 @@ For an Android-only first build, use the `androidApp` module's debug build task 
 
 ## Compatibility
 The declared minimum API is 24. The target API and compile SDK should be aligned with the installed Android SDK and current Play/Android requirements. Native ABI and 16 KiB page-size support must be tested against every native dependency; this scaffold does not claim that validation has already passed.
+
+See [docs/MONETIZATION.md](docs/MONETIZATION.md) for the distribution and monetization policy (no proprietary Google software is hosted or sold).

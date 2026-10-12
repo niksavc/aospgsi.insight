@@ -118,6 +118,22 @@ static inline void android_fdsan_exchange_owner_tag(int, uint64_t, uint64_t) {}
 static inline int android_fdsan_close_with_tag(int fd, uint64_t) { return close(fd); }
 HDR
   inject "$COMPAT/fdsan_compat.h" 'android_fdsan_(create|get|exchange|close)'
+
+  # bionic gained reallocarray in Android 10 (API 29); libsepol is built with HAVE_REALLOCARRAY.
+  cat > compat/reallocarray_compat.h <<'HDR'
+#pragma once
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
+static inline void* reallocarray(void* ptr, size_t nmemb, size_t size) {
+  if (size != 0 && nmemb > SIZE_MAX / size) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  return realloc(ptr, nmemb * size);
+}
+HDR
+  inject "$COMPAT/reallocarray_compat.h" 'reallocarray\('
 fi
 
 if [ "$API" -lt 26 ]; then

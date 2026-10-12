@@ -129,19 +129,6 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
     return parts.joinToString(" <- ")
   }
 
-  /** The message plus the chain of causes: wrappers such as apksig's often hide the real reason. */
-  private fun describe(error: Throwable): String {
-    val parts = mutableListOf<String>()
-    var current: Throwable? = error
-    while (current != null && parts.size < 5) {
-      parts +=
-        current.message?.let { "${current.javaClass.simpleName}: $it" }
-          ?: current.javaClass.simpleName
-      current = current.cause?.takeIf { it !== current }
-    }
-    return parts.joinToString(" <- ")
-  }
-
   private fun config(decoding: Boolean): Config =
     Config(APKTOOL_VERSION).apply {
       setForced(true)

@@ -24,7 +24,7 @@ cat > "$WORK/AndroidManifest.xml" <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.legacy">
   <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="19"/>
-  <application android:label="@string/app_name"/>
+  <application android:label="@string/app_name" android:hasCode="false"/>
 </manifest>
 XML
 "$BT/aapt2" compile --dir "$WORK/res" -o "$WORK/res.zip"

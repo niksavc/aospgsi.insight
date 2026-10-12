@@ -6,7 +6,7 @@
 set -euo pipefail
 
 APP_APK=${1:?path to the AOSP GSI Insight debug APK}
-PKG=com.aospgsi.insight
+PKG=nks.aospgsi.insight
 SDK_ROOT=${ANDROID_HOME:-$ANDROID_SDK_ROOT}
 BT=$(ls -d "$SDK_ROOT"/build-tools/* | sort -V | tail -n 1)
 JAR=$(ls "$SDK_ROOT"/platforms/android-*/android.jar | sort -V | tail -n 1)
@@ -59,7 +59,7 @@ adb shell ls -lZ "/data/data/$PKG/cache" || true
 
 echo "== Starting the patch service"
 if [ "$SDK" -ge 26 ]; then START=start-foreground-service; else START=startservice; fi
-adb shell am $START -n "$PKG/com.aospgsi.insight.app.PatchService" \
+adb shell am $START -n "$PKG/nks.aospgsi.insight.app.PatchService" \
   --es source "/data/data/$PKG/cache/patch-source.apk" \
   --es package com.example.legacy \
   --ei targetSdk 24 \

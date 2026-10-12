@@ -28,7 +28,7 @@
             android:foregroundServiceType="dataSync" />
 
         <receiver
-            android:name="com.aospgsi.insight.core.installer.InstallResultReceiver"
+            android:name="nks.aospgsi.insight.core.installer.InstallResultReceiver"
             android:exported="false" />
     </application>
 </manifest>

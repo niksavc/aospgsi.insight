@@ -9,7 +9,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.aospgsi.insight.shared"
+    namespace = "nks.aospgsi.insight.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
 

@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.aospgsi.insight.core.apkinspector"
+    namespace = "nks.aospgsi.insight.core.apkinspector"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
     withHostTest {}

@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
   android {
-    namespace = "com.aospgsi.insight.core.apkmodel"
+    namespace = "nks.aospgsi.insight.core.apkmodel"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
 

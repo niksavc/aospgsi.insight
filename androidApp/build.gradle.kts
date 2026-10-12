@@ -12,11 +12,11 @@ kotlin {
 }
 
 android {
-  namespace = "com.aospgsi.insight.app"
+  namespace = "nks.aospgsi.insight.app"
   compileSdk = libs.versions.android.compileSdk.get().toInt()
 
   defaultConfig {
-    applicationId = "com.aospgsi.insight"
+    applicationId = "nks.aospgsi.insight"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
     versionCode = 1

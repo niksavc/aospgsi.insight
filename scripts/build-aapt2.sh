@@ -70,12 +70,17 @@ test -x "$PROTOC"
 "$PROTOC" --version
 
 echo "== Building aapt2 for $ABI (API $API)"
-# 16 KiB-aligned segments: needed to execute on 16 KiB page-size kernels.
-export LDFLAGS="${LDFLAGS:-} -Wl,-z,max-page-size=16384"
-# The fmt version in this tag trips over the stricter consteval checks of recent NDK clang releases;
-# fmt only needs consteval for compile-time format string checks, so turn it off.
-export CXXFLAGS="${CXXFLAGS:-} -DFMT_USE_CONSTEVAL=0 -DFMT_CONSTEVAL="
-grep -n "define FMT_VERSION\|FMT_USE_CONSTEVAL\|define FMT_CONSTEVAL" src/fmtlib/include/fmt/core.h | head -n 12 | sed 's/^/fmt: /' || true
+# 16 KiB-aligned segments: needed to execute on 16 KiB page-size kernels. build.py has no way to pass
+# linker flags, so add them to its cmake command line.
+sed -i "s|'-DCMAKE_BUILD_TYPE=Release'\]|'-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384']|" build.py
+grep -q "max-page-size=16384" build.py
+
+# The fmt version in this tag (10.2) trips over the stricter consteval checks of recent NDK clang
+# releases. consteval only enables compile-time format string checks, so turn it off in the header.
+FMT_CORE=src/fmtlib/include/fmt/core.h
+sed -i -E 's/^(#\s*)define FMT_CONSTEVAL consteval/\1define FMT_CONSTEVAL/; s/^(#\s*)define FMT_HAS_CONSTEVAL/\1define FMT_HAS_CONSTEVAL_OFF/' "$FMT_CORE"
+grep -n "FMT_CONSTEVAL\|FMT_HAS_CONSTEVAL" "$FMT_CORE" | head -n 8 | sed 's/^/fmt: /' || true
+
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"
 

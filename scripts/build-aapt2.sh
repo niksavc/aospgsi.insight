@@ -97,8 +97,8 @@ fi
 inject() {
   local header=$1 pattern=$2
   grep -rlE --include='*.c' --include='*.cc' --include='*.cpp' --include='*.h' --include='*.hpp' \
-    "$pattern" src/libbase src/core src/native src/base/libs src/base/tools src/incremental_delivery \
-    src/logging src/libziparchive src/selinux 2>/dev/null |
+    "$pattern" src \
+    2>/dev/null |
     while read -r file; do
       sed -i "1i #include \"$header\"" "$file"
       echo "compat: $(basename "$header") -> $file"

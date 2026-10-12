@@ -98,6 +98,7 @@ fi
 echo "== Checking the patched APK"
 adb pull "/data/data/$PKG/files/patched/com.example.legacy.apk" "$WORK/patched.apk" >/dev/null
 "$BT/apksigner" verify --print-certs "$WORK/patched.apk" | head -n 5
+"$BT/apksigner" verify --print-certs "$WORK/patched.apk" | grep -q "certificate DN: CN=AOSP GSI Insight, O=niksavc, C=RU"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -E "^package:|^targetSdkVersion|^(min)?[sS]dkVersion|^application-label"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "package: name='com.example.legacy.aospgsi'"
 "$BT/aapt2" dump badging "$WORK/patched.apk" | grep -q "targetSdkVersion:'24'"

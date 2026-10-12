@@ -21,6 +21,13 @@ object AndroidKeystoreSigningKey {
   private const val PROVIDER = "AndroidKeyStore"
   const val DEFAULT_ALIAS = "aospgsi-signing"
 
+  /**
+   * Who the certificate says it belongs to. It is only a label (Android trusts the key, not the
+   * name), so it says plainly that the key is this app's own, not Google's or the original
+   * developer's. Applies to keys created from now on; an existing key keeps its subject.
+   */
+  const val SUBJECT = "CN=AOSP GSI Insight, O=niksavc, C=RU"
+
   fun getOrCreate(alias: String = DEFAULT_ALIAS): SigningKey {
     val store = KeyStore.getInstance(PROVIDER).apply { load(null) }
     if (!store.containsAlias(alias)) generate(alias)
@@ -41,7 +48,7 @@ object AndroidKeystoreSigningKey {
           KeyProperties.DIGEST_SHA512,
         )
         .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
-        .setCertificateSubject(X500Principal("CN=AOSP GSI Insight local signing"))
+        .setCertificateSubject(X500Principal(SUBJECT))
         .setCertificateNotAfter(Date(4_102_444_800_000L)) // 2100-01-01
         .build()
     KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, PROVIDER).run {

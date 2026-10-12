@@ -9,6 +9,10 @@ on:
         description: 'JSON array of {"abi": ..., "api": ...}'
         type: string
         required: true
+      smoke:
+        description: 'Run the x86_64 build on an emulator'
+        type: boolean
+        default: false
   # Probe builds: push to this branch to try the build without touching the main workflow.
   push:
     branches: [claude/aapt2]
@@ -25,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.matrix || '[{"abi":"arm64-v8a","api":24},{"abi":"arm64-v8a","api":30}]') }}
+        include: ${{ fromJSON(inputs.matrix || '[{"abi":"arm64-v8a","api":30},{"abi":"armeabi-v7a","api":30},{"abi":"x86_64","api":30},{"abi":"x86","api":30}]') }}
 
     steps:
       - uses: actions/checkout@v5
@@ -65,7 +69,7 @@ jobs:
             msg=$(sed ':a;N;$!ba;s/\n/%0A/g' out/aapt2/${{ matrix.abi }}/BUILDINFO.txt)
             echo "::notice title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           elif [ -f build-aapt2.log ]; then
-            msg=$( { grep -E "^compat: |^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            msg=$( { grep -E "^fmt: |^::error|^::warning|FAILED|error:|Error |No such file|fatal|undefined reference|cannot find|missing" build-aapt2.log | head -n 40; echo '--- tail ---'; tail -n 25 build-aapt2.log; } | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=aapt2 ${{ matrix.abi }} api${{ matrix.api }}::$msg"
           fi
 
@@ -76,3 +80,40 @@ jobs:
           path: out/aapt2/${{ matrix.abi }}
           if-no-files-found: error
           retention-days: 30
+
+  smoke-test:
+    name: Run aapt2 on an Android 11 emulator
+    needs: aapt2
+    if: github.event_name == 'push' || inputs.smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: aapt2-x86_64-api30
+          path: aapt2
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Smoke test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: default
+          script: scripts/aapt2-smoke-test.sh aapt2/libaapt2.so 2>&1 | tee smoke.log
+
+      - name: Report smoke test result
+        if: always()
+        shell: bash
+        run: |
+          if [ -f smoke.log ]; then
+            msg=$(tail -n 40 smoke.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::notice title=aapt2 smoke test::$msg"
+          fi

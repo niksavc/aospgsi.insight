@@ -5,6 +5,9 @@
 # CMake port lzhiyong/android-sdk-tools (Apache-2.0), pinned to a commit, and fetches the AOSP
 # sources at a pinned platform-tools tag.
 #
+# The result needs Android 11 (API 30) or newer: libbase and liblog use API 30 functions of the C
+# library. Building for lower levels was tried and needs invasive source changes, so it is not done.
+#
 # usage: scripts/build-aapt2.sh <abi> <android-api-level> <output-dir>
 #   abi: arm64-v8a | armeabi-v7a | x86_64 | x86
 # env:   ANDROID_NDK_HOME (NDK root), WORK_DIR (scratch dir, default ./build/aapt2)
@@ -80,27 +83,6 @@ grep -q "max-page-size=16384" build.py
 FMT_CORE=src/fmtlib/include/fmt/core.h
 sed -i -E 's/^(#\s*)define FMT_CONSTEVAL consteval/\1define FMT_CONSTEVAL/; s/^(#\s*)define FMT_HAS_CONSTEVAL/\1define FMT_HAS_CONSTEVAL_OFF/' "$FMT_CORE"
 grep -n "FMT_CONSTEVAL\|FMT_HAS_CONSTEVAL" "$FMT_CORE" | head -n 8 | sed 's/^/fmt: /' || true
-
-# libbase calls fdsan (Android 10, API 29) unconditionally. For older API levels, supply no-op stand-ins:
-# fd ownership is then simply not tracked, which is how those Android versions behave anyway.
-if [ "$API" -lt 29 ]; then
-  cat > src/libbase/include/android-base/fdsan_compat.h <<'HDR'
-#pragma once
-#include <stdint.h>
-#include <unistd.h>
-static inline uint64_t android_fdsan_create_owner_tag(int, uint64_t) { return 0; }
-static inline void android_fdsan_exchange_owner_tag(int, uint64_t, uint64_t) {}
-static inline int android_fdsan_close_with_tag(int fd, uint64_t) { return close(fd); }
-HDR
-  sed -i '0,/^#pragma once/s//#pragma once\n#include <android-base\/fdsan_compat.h>/' src/libbase/include/android-base/unique_fd.h
-  grep -n "fdsan_compat" src/libbase/include/android-base/unique_fd.h | sed 's/^/compat: /'
-fi
-
-if [ "$API" -lt 30 ]; then
-  # liblog's own sources are compiled in, so the "introduced in API 30" markers on its newer
-  # functions do not apply: the implementations ship inside the binary.
-  find src/logging -path '*liblog/include/android/log.h' -exec sed -i 's/__INTRODUCED_IN(30)//g' {} +
-fi
 
 python3 build.py --ndk="$NDK" --abi="$ABI" --api="$API" --build="build/$ABI" \
   --protoc="$PROTOC" --target=aapt2 --job="$(nproc)"

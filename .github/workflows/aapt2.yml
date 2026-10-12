@@ -107,7 +107,7 @@ jobs:
           api-level: 30
           arch: x86_64
           target: default
-          script: scripts/aapt2-smoke-test.sh aapt2/libaapt2.so 2>&1 | tee smoke.log
+          script: bash -o pipefail -c 'scripts/aapt2-smoke-test.sh aapt2/libaapt2.so 2>&1 | tee smoke.log'
 
       - name: Report smoke test result
         if: always()

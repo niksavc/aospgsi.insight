@@ -21,10 +21,10 @@ cat > "$WORK/AndroidManifest.xml" <<'XML'
 </manifest>
 XML
 
-adb shell "rm -rf $DEV && mkdir -p $DEV/res"
+adb shell "rm -rf $DEV && mkdir -p $DEV/res/values"
 adb push "$AAPT2" "$DEV/aapt2" >/dev/null
 adb push "$JAR" "$DEV/android.jar" >/dev/null
-adb push "$WORK/res/values/strings.xml" "$DEV/res/strings.xml" >/dev/null
+adb push "$WORK/res/values/strings.xml" "$DEV/res/values/strings.xml" >/dev/null
 adb push "$WORK/AndroidManifest.xml" "$DEV/AndroidManifest.xml" >/dev/null
 adb shell "chmod 755 $DEV/aapt2"
 

@@ -39,14 +39,23 @@ cd builder
 test "$(git rev-parse HEAD)" = "$BUILDER_SHA"
 
 echo "== Fetching AOSP sources at $AOSP_TAG"
-python3 get_source.py --tags "$AOSP_TAG"
-
-# get_source.py does not stop when a clone fails, so check every repository it should have fetched.
-missing=$(python3 - <<'PY'
+# android.googlesource.com answers 503 now and then, and get_source.py does not stop when a clone
+# fails. So check every repository it should have fetched and retry the missing ones.
+missing_repos() {
+  python3 - <<'PY'
 import json, os
-print(" ".join(r["path"] for r in json.load(open("repos.json")) if not os.path.isdir(r["path"])))
+print(" ".join(r["path"] for r in json.load(open("repos.json")) if not os.path.isdir(os.path.join(r["path"], ".git"))))
 PY
-)
+}
+missing=""
+for attempt in 1 2 3 4 5; do
+  for path in $missing; do rm -rf "$path"; done
+  python3 get_source.py --tags "$AOSP_TAG" || true
+  missing=$(missing_repos)
+  [ -z "$missing" ] && break
+  echo "attempt $attempt: missing $missing; retrying"
+  sleep $((attempt * 20))
+done
 if [ -n "$missing" ]; then
   echo "::error::AOSP repositories missing for tag $AOSP_TAG: $missing"
   exit 1

@@ -33,7 +33,13 @@ object AndroidKeystoreSigningKey {
     val spec =
       KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_SIGN)
         .setKeySize(2048)
-        .setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA512)
+        // SHA-1 is needed only for the v1 (JAR) signature of APKs whose minSdk is below 18, where
+        // Android does not understand SHA-256 digests; v2/v3 use SHA-256 and above.
+        .setDigests(
+          KeyProperties.DIGEST_SHA1,
+          KeyProperties.DIGEST_SHA256,
+          KeyProperties.DIGEST_SHA512,
+        )
         .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
         .setCertificateSubject(X500Principal("CN=BloxInsight local signing"))
         .setCertificateNotAfter(Date(4_102_444_800_000L)) // 2100-01-01

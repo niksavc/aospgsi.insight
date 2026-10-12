@@ -94,10 +94,21 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
     } catch (e: OutOfMemoryError) {
       return PatchResult.Failure(stage, "Out of memory while patching this APK.")
     } catch (e: Exception) {
-      return PatchResult.Failure(stage, e.message ?: e.javaClass.simpleName)
+      return PatchResult.Failure(stage, describe(e))
     } finally {
       work.deleteRecursively()
     }
+  }
+
+  /** The message plus the chain of causes, since wrappers such as apksig hide the real reason. */
+  private fun describe(error: Throwable): String {
+    val parts = mutableListOf<String>()
+    var current: Throwable? = error
+    while (current != null && parts.size < 4) {
+      parts += current.message ?: current.javaClass.simpleName
+      current = current.cause?.takeIf { it !== current }
+    }
+    return parts.joinToString(" <- ")
   }
 
   private fun config(decoding: Boolean): Config =

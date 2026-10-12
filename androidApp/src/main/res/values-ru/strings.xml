@@ -77,5 +77,34 @@
     <string name="issue_unknown_signer">Ключа подписи %1$s нет в вашем списке доверенных; файл может быть изменён или перепакован.</string>
     <string name="issue_16kb">Устройство использует страницы памяти 16 КиБ, а часть нативных библиотек с ними несовместима; приложение может падать при запуске.</string>
 
+    <string name="card_fix">Исправление для этой версии Android</string>
+    <string name="fix_intro">BloxInsight может пересобрать этот APK так, чтобы Android его принял, и подписать ключом, который хранится на этом устройстве. Выбранный файл не изменяется. Изменения:</string>
+    <string name="fix_change_target_sdk">Поднять target SDK с %1$d до %2$d.</string>
+    <string name="fix_change_package">Установить под новым package ID: %1$s</string>
+    <string name="fix_nothing_but_clone">Сам файл уже подходит этой версии Android. Его всё равно можно поставить рядом с оригиналом:</string>
+    <string name="fix_clone_toggle">Установить рядом с оригиналом (новый package ID, отдельные данные)</string>
+    <string name="fix_replace_warning">Без нового package ID приложение должно заменить установленный оригинал, а это возможно только при одинаковом ключе подписи. Иначе сначала удалите оригинал (его данные пропадут).</string>
+    <string name="fix_target_sdk_warning">Повышение target SDK меняет поведение приложения в Android (runtime-разрешения, фоновые ограничения, доступ к хранилищу). Старое приложение может падать или терять функции.</string>
+    <string name="fix_key_note">Ключ подписи создаётся и хранится на этом устройстве. Если удалить BloxInsight или сбросить устройство, приложения, исправленные этим ключом, нельзя будет обновить новыми исправленными сборками, их придётся поставить заново.</string>
+    <string name="fix_no_aapt2">Компилятор ресурсов (aapt2) не входит в эту сборку, поэтому исправление недоступно.</string>
+    <string name="fix_bundle_unavailable">Бандлы (.apks, .xapk, .apkm) пока нельзя исправлять: все части должны подписываться вместе.</string>
+    <string name="fix_button">Исправить</string>
+    <string name="fix_running">Исправление…</string>
+    <string name="fix_failed">Не удалось исправить (%1$s): %2$s</string>
+    <string name="patched_note">Показан исправленный APK, который BloxInsight только что собрал и подписал.</string>
+    <string name="patch_stage_decode">Чтение APK</string>
+    <string name="patch_stage_patch">Применение изменений</string>
+    <string name="patch_stage_build">Пересборка</string>
+    <string name="patch_stage_align">Выравнивание</string>
+    <string name="patch_stage_sign">Подпись</string>
+    <string name="patch_stage_verify">Проверка</string>
+    <string name="patch_stage_done">Готово</string>
+    <string name="patch_stage_working">Работа</string>
+    <string name="notification_channel_patch">Ход исправления</string>
+    <string name="notification_patch_title">Исправление APK</string>
+    <string name="notification_patch_done">APK исправлен</string>
+    <string name="notification_patch_failed">Не удалось исправить</string>
+    <string name="notification_patch_ready">Откройте BloxInsight, чтобы установить.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. BloxInsight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

@@ -48,6 +48,7 @@ dependencies {
   implementation(project(":core:apk-inspector"))
   implementation(project(":core:verification"))
   implementation(project(":core:installer"))
+  implementation(project(":core:patch-api"))
   implementation(project(":core:patch-engine-apktool"))
   implementation(project(":integrations:backend-api"))
   coreLibraryDesugaring(libs.desugar.jdk.libs.nio)

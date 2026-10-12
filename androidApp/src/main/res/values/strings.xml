@@ -77,5 +77,34 @@
     <string name="issue_unknown_signer">The signing key of %1$s is not in your trusted list; the file may be modified or repackaged.</string>
     <string name="issue_16kb">This device uses 16 KiB memory pages and some native libraries are not 16 KiB compatible; the app may crash on launch.</string>
 
+    <string name="card_fix">Fix for this Android version</string>
+    <string name="fix_intro">BloxInsight can rebuild this APK so Android accepts it, and sign it with a key that stays on this device. The file you picked is not modified. Changes:</string>
+    <string name="fix_change_target_sdk">Raise the target SDK from %1$d to %2$d.</string>
+    <string name="fix_change_package">Install under a new package ID: %1$s</string>
+    <string name="fix_nothing_but_clone">The file itself already meets this Android version\'s requirements. You can still install it next to the original:</string>
+    <string name="fix_clone_toggle">Install next to the original (new package ID, separate data)</string>
+    <string name="fix_replace_warning">Without a new package ID the app would have to replace the installed original, which only works if both are signed with the same key. Otherwise uninstall the original first (its data is lost).</string>
+    <string name="fix_target_sdk_warning">Raising the target SDK changes how Android treats the app (runtime permissions, background limits, storage access). Old apps may crash or lose features.</string>
+    <string name="fix_key_note">The signing key is created and kept on this device. If you uninstall BloxInsight or reset the device, apps patched with it can no longer be updated by new patched builds; they would have to be reinstalled.</string>
+    <string name="fix_no_aapt2">The resource compiler (aapt2) is not part of this build, so fixing is unavailable.</string>
+    <string name="fix_bundle_unavailable">Split bundles (.apks, .xapk, .apkm) cannot be fixed yet: all parts must be signed together.</string>
+    <string name="fix_button">Fix</string>
+    <string name="fix_running">Fixing…</string>
+    <string name="fix_failed">Fix failed (%1$s): %2$s</string>
+    <string name="patched_note">Showing the fixed APK that BloxInsight just built and signed.</string>
+    <string name="patch_stage_decode">Reading the APK</string>
+    <string name="patch_stage_patch">Applying changes</string>
+    <string name="patch_stage_build">Rebuilding</string>
+    <string name="patch_stage_align">Aligning</string>
+    <string name="patch_stage_sign">Signing</string>
+    <string name="patch_stage_verify">Verifying</string>
+    <string name="patch_stage_done">Done</string>
+    <string name="patch_stage_working">Working</string>
+    <string name="notification_channel_patch">Patch progress</string>
+    <string name="notification_patch_title">Fixing APK</string>
+    <string name="notification_patch_done">APK fixed</string>
+    <string name="notification_patch_failed">Fix failed</string>
+    <string name="notification_patch_ready">Open BloxInsight to install it.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. BloxInsight does not install, run or modify the selected file.</string>
 </resources>

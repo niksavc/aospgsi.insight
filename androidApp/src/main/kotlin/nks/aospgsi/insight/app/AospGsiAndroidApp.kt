@@ -43,9 +43,10 @@ import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
+import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
 import nks.aospgsi.insight.core.apkinspector.LibraryCategory
-import nks.aospgsi.insight.core.apkinspector.NativeLibraryCatalog
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
 import nks.aospgsi.insight.core.installer.DeviceProbe
 import nks.aospgsi.insight.core.installer.InstallEvents
@@ -461,7 +462,7 @@ fun AospGsiAndroidApp() {
             }
           }
 
-          RecognizedLibrariesCard(apk.nativeLibraries)
+          RecognizedLibrariesCard(apk)
           JsonResourcesCard(apk.jsonResources)
           ComponentCard(R.string.card_activities, apk.activities)
           ComponentCard(R.string.card_services, apk.services)
@@ -588,29 +589,58 @@ private fun ComponentCard(@StringRes titleRes: Int, components: List<ApkComponen
 }
 
 @Composable
-private fun RecognizedLibrariesCard(paths: List<String>) {
-  val found = remember(paths) { NativeLibraryCatalog.identifyAll(paths) }
-  if (found.isEmpty()) return
-  SectionCard(stringResource(R.string.card_known_libs, found.size)) {
-    found.forEach { (file, lib) ->
-      val category = stringResource(libraryCategoryLabel(lib.category))
-      Text("• $file — ${lib.name} ($category)", style = MaterialTheme.typography.bodySmall)
+private fun RecognizedLibrariesCard(apk: ApkInspection) {
+  val found =
+    remember(apk.nativeLibraries) {
+      apk.nativeLibraries
+        .distinctBy { it.substringAfterLast('/') }
+        .mapNotNull { path ->
+          LibraryCatalog.identify(path)?.let { path.substringAfterLast('/') to it }
+        }
+        .sortedBy { it.first }
     }
-    if (found.any { it.second.adsCommon }) {
-      Text(stringResource(R.string.known_libs_ads_hint), style = MaterialTheme.typography.bodySmall)
+  val framework =
+    remember(apk.nativeLibraries) { LibraryCatalog.detectFramework(apk.nativeLibraries) }
+  val ads =
+    remember(apk) {
+      val names = (apk.activities + apk.services + apk.receivers + apk.providers).map { it.name }
+      AdSdkCatalog.detect(names, apk.metaData.keys)
     }
+  if (found.isEmpty() && ads.isEmpty()) return
+  if (found.isNotEmpty()) {
+    SectionCard(stringResource(R.string.card_known_libs, found.size)) {
+      framework?.let { Text(stringResource(R.string.framework_line, it)) }
+      found.forEach { (file, lib) ->
+        val category = stringResource(libraryCategoryLabel(lib.category))
+        val proprietary =
+          if (lib.proprietary) ", ${stringResource(R.string.lib_proprietary)}" else ""
+        Text(
+          "• $file — ${lib.name} ($category; ${lib.project}, ${lib.license}$proprietary)",
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
+    }
+  }
+  SectionCard(stringResource(R.string.card_ad_sdks)) {
+    if (ads.isEmpty()) {
+      Text(stringResource(R.string.ad_sdks_none))
+    } else {
+      ads.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+    }
+    Text(stringResource(R.string.ad_sdks_note), style = MaterialTheme.typography.bodySmall)
   }
 }
 
 @StringRes
 private fun libraryCategoryLabel(category: LibraryCategory): Int =
   when (category) {
-    LibraryCategory.MESSAGING -> R.string.lib_cat_messaging
+    LibraryCategory.APP_CORE -> R.string.lib_cat_app_core
     LibraryCategory.MAPS -> R.string.lib_cat_maps
     LibraryCategory.MACHINE_LEARNING -> R.string.lib_cat_ml
     LibraryCategory.ANDROIDX -> R.string.lib_cat_androidx
     LibraryCategory.MEDIA -> R.string.lib_cat_media
     LibraryCategory.GAME_ENGINE -> R.string.lib_cat_engine
+    LibraryCategory.RUNTIME -> R.string.lib_cat_runtime
   }
 
 @Composable

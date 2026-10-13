@@ -115,8 +115,13 @@
 
     <string name="show_more">Show %1$d more (%2$d left)</string>
     <string name="card_known_libs">Recognized libraries (%1$d)</string>
-    <string name="known_libs_ads_hint">Unity-based apps very often include advertising SDKs. These libraries alone do not prove that the app shows ads.</string>
-    <string name="lib_cat_messaging">messenger</string>
+    <string name="framework_line">Built with: %1$s</string>
+    <string name="lib_proprietary">proprietary</string>
+    <string name="card_ad_sdks">Advertising SDKs</string>
+    <string name="ad_sdks_none">No advertising SDK is declared in the manifest.</string>
+    <string name="ad_sdks_note">Detected from manifest components and meta-data only; the app code is not scanned, so this is a lower bound. A game engine alone does not prove that an app shows ads.</string>
+    <string name="lib_cat_app_core">app core</string>
+    <string name="lib_cat_runtime">runtime</string>
     <string name="lib_cat_maps">maps</string>
     <string name="lib_cat_ml">machine learning</string>
     <string name="lib_cat_androidx">AndroidX</string>

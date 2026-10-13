@@ -115,8 +115,13 @@
 
     <string name="show_more">Показать ещё %1$d (осталось %2$d)</string>
     <string name="card_known_libs">Распознанные библиотеки (%1$d)</string>
-    <string name="known_libs_ads_hint">Приложения на Unity очень часто содержат рекламные SDK. Сами по себе эти библиотеки не доказывают, что приложение показывает рекламу.</string>
-    <string name="lib_cat_messaging">мессенджер</string>
+    <string name="framework_line">Собрано на: %1$s</string>
+    <string name="lib_proprietary">проприетарная</string>
+    <string name="card_ad_sdks">Рекламные SDK</string>
+    <string name="ad_sdks_none">В манифесте не объявлено ни одного рекламного SDK.</string>
+    <string name="ad_sdks_note">Определяется только по компонентам и meta-data манифеста; код приложения не сканируется, поэтому это нижняя граница. Один лишь игровой движок не доказывает, что приложение показывает рекламу.</string>
+    <string name="lib_cat_app_core">ядро приложения</string>
+    <string name="lib_cat_runtime">среда выполнения</string>
     <string name="lib_cat_maps">карты</string>
     <string name="lib_cat_ml">машинное обучение</string>
     <string name="lib_cat_androidx">AndroidX</string>

@@ -136,5 +136,11 @@
     <string name="fix_confirm_title">Fix this APK?</string>
     <string name="fix_confirm_message">A new APK will be built and signed with this device\'s key. The file you picked is not changed. Raising the target SDK can change how the app behaves.</string>
 
+    <string name="card_distribution">Distribution</string>
+    <string name="distribution_play_stamp">The manifest says this APK was distributed through Google Play.</string>
+    <string name="distribution_split">This file is one piece of an app delivered as splits (Google Play). On its own it may be incomplete or fail to start; install the whole bundle.</string>
+    <string name="distribution_splits_required">The other splits are marked as required.</string>
+    <string name="distribution_not_proof">This is only what the manifest claims. Anyone can write it, so it is not proof of origin; check the signing key in the Signatures card.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

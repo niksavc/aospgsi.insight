@@ -136,5 +136,11 @@
     <string name="fix_confirm_title">Исправить этот APK?</string>
     <string name="fix_confirm_message">Будет собран новый APK, подписанный ключом этого устройства. Выбранный файл не изменится. Повышение target SDK может изменить поведение приложения.</string>
 
+    <string name="card_distribution">Распространение</string>
+    <string name="distribution_play_stamp">В манифесте указано, что этот APK распространялся через Google Play.</string>
+    <string name="distribution_split">Этот файл — часть приложения, поставляемого по частям (Google Play). Сам по себе он может быть неполным или не запускаться; ставьте весь бандл.</string>
+    <string name="distribution_splits_required">Остальные части помечены как обязательные.</string>
+    <string name="distribution_not_proof">Это лишь заявление манифеста. Записать его может кто угодно, поэтому это не доказательство происхождения; проверьте ключ подписи в карточке «Подписи».</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. AOSP GSI Insight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

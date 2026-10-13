@@ -47,6 +47,7 @@ import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.app.ui.AospGsiTheme
 import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
+import nks.aospgsi.insight.core.apkinspector.DistributionRules
 import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
 import nks.aospgsi.insight.core.apkinspector.LibraryCategory
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
@@ -464,6 +465,7 @@ fun AospGsiAndroidApp() {
             }
           }
 
+          DistributionCard(apk.metaData)
           RecognizedLibrariesCard(apk)
           JsonResourcesCard(apk.jsonResources)
           ComponentCard(R.string.card_activities, apk.activities)
@@ -670,4 +672,24 @@ private fun JsonResourcesCard(files: List<ApkResourceFile>) {
       if (f.kind == ResourceKind.LOTTIE) "${f.path} · $lottie · $kb" else "${f.path} · $kb"
     },
   )
+}
+
+@Composable
+private fun DistributionCard(metaData: Map<String, String>) {
+  val info = remember(metaData) { DistributionRules.from(metaData) } ?: return
+  SectionCard(stringResource(R.string.card_distribution)) {
+    if (info.claimsGooglePlay) Text(stringResource(R.string.distribution_play_stamp))
+    info.stampType?.let { Text("• stamp: $it", style = MaterialTheme.typography.bodySmall) }
+    if (info.playSplit) {
+      Text(stringResource(R.string.distribution_split))
+      info.derivedApkId?.let {
+        Text("• derived APK id: $it", style = MaterialTheme.typography.bodySmall)
+      }
+    }
+    if (info.splitsRequired) Text(stringResource(R.string.distribution_splits_required))
+    Text(
+      stringResource(R.string.distribution_not_proof),
+      style = MaterialTheme.typography.bodySmall,
+    )
+  }
 }

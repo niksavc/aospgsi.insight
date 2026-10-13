@@ -2,6 +2,7 @@ package nks.aospgsi.insight.app
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -10,10 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -44,7 +47,6 @@ import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import nks.aospgsi.insight.app.ui.AospGsiTheme
 import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
 import nks.aospgsi.insight.core.apkinspector.DistributionRules
@@ -234,15 +236,35 @@ fun AospGsiAndroidApp() {
     onDispose { InstallEvents.listener = null }
   }
 
-  AospGsiTheme {
+  AppTheme {
     Surface(modifier = Modifier.fillMaxSize()) {
       Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        modifier =
+          Modifier.fillMaxSize()
+            .safeDrawingPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         Text("AOSP GSI Insight", style = MaterialTheme.typography.headlineLarge)
         Text(stringResource(R.string.inspector_title), style = MaterialTheme.typography.titleLarge)
         Text(stringResource(R.string.inspector_subtitle))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          listOf(
+              R.string.nav_apps to InstalledAppsActivity::class.java,
+              R.string.nav_settings to SettingsActivity::class.java,
+              R.string.nav_about to AboutActivity::class.java,
+            )
+            .forEach { (label, target) ->
+              OutlinedButton(
+                onClick = { context.startActivity(Intent(context, target)) },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+              ) {
+                Text(stringResource(label), maxLines = 1)
+              }
+            }
+        }
         Button(
           onClick = {
             picker.launch(

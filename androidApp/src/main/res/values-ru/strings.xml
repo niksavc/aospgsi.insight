@@ -142,5 +142,33 @@
     <string name="distribution_splits_required">Остальные части помечены как обязательные.</string>
     <string name="distribution_not_proof">Это лишь заявление манифеста. Записать его может кто угодно, поэтому это не доказательство происхождения; проверьте ключ подписи в карточке «Подписи».</string>
 
+    <string name="back">Назад</string>
+    <string name="nav_apps">Приложения</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="nav_about">О проекте</string>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_theme">Тема</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная (чисто чёрная)</string>
+    <string name="settings_colors">Цвета</string>
+    <string name="settings_dynamic_color">Цвета обоев (Material You)</string>
+    <string name="settings_dynamic_color_unsupported">Нужен Android 12 или новее.</string>
+    <string name="about_title">О проекте</string>
+    <string name="about_tagline">Анализирует, проверяет и исправляет APK для устройств с AOSP GSI (Android 7–16).</string>
+    <string name="about_version">Версия %1$s</string>
+    <string name="about_legal_title">Чего это приложение не делает</string>
+    <string name="about_legal_body">Оно не размещает, не включает в себя и не продаёт проприетарное ПО Google (Play Store, Play Services, WebView). Оно анализирует и устанавливает файлы, которые вы даёте, и подписывает исправленные копии ключом, который остаётся на вашем устройстве. Убедитесь, что вам разрешено использовать открываемые файлы.</string>
+    <string name="about_licenses_title">Открытые компоненты</string>
+    <string name="about_licenses_note">Тексты лицензий и уведомления лежат в репозитории проекта (third_party/).</string>
+    <string name="apps_title">Установленные приложения</string>
+    <string name="apps_loading">Загрузка…</string>
+    <string name="apps_count">Приложений: %1$d</string>
+    <string name="apps_show_system">Показывать системные</string>
+    <string name="apps_only_below_floor">Только с target ниже API %1$d</string>
+    <string name="apps_version_target">Версия %1$s · target SDK %2$d</string>
+    <string name="apps_below_floor">Target ниже API %1$d: эта версия Android отказалась бы ставить его заново.</string>
+    <string name="apps_google_namespace">Package ID в пространстве имён Google.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. AOSP GSI Insight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

@@ -131,5 +131,10 @@
     <string name="resource_lottie">анимация Lottie</string>
     <string name="proprietary_namespace_note">Этот package ID находится в пространстве имён Google (com.google.android.*), но это не доказывает, что приложение от Google: сторонние приложения иногда используют его. Проверьте ключ подписи в карточке «Подписи», прежде чем доверять.</string>
 
+    <string name="filter_hint">Фильтр</string>
+    <string name="cancel">Отмена</string>
+    <string name="fix_confirm_title">Исправить этот APK?</string>
+    <string name="fix_confirm_message">Будет собран новый APK, подписанный ключом этого устройства. Выбранный файл не изменится. Повышение target SDK может изменить поведение приложения.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. AOSP GSI Insight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

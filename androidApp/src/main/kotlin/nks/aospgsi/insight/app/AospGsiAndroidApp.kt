@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nks.aospgsi.insight.app.ui.AospGsiTheme
 import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
 import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
@@ -231,7 +233,7 @@ fun AospGsiAndroidApp() {
     onDispose { InstallEvents.listener = null }
   }
 
-  MaterialTheme {
+  AospGsiTheme {
     Surface(modifier = Modifier.fillMaxSize()) {
       Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -564,11 +566,25 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 
 @Composable
 private fun ListCard(title: String, items: List<String>, pageSize: Int = PAGE_SIZE) {
-  var shown by rememberSaveable(title, items.size) { mutableIntStateOf(pageSize) }
+  var query by rememberSaveable(title) { mutableStateOf("") }
+  var shown by rememberSaveable(title, items.size, query) { mutableIntStateOf(pageSize) }
+  val visible =
+    remember(items, query) {
+      if (query.isBlank()) items else items.filter { it.contains(query.trim(), ignoreCase = true) }
+    }
   SectionCard(title) {
-    if (items.isEmpty()) Text(stringResource(R.string.none_found))
-    items.take(shown).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
-    val left = items.size - shown
+    if (items.size > pageSize) {
+      OutlinedTextField(
+        value = query,
+        onValueChange = { query = it },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        label = { Text(stringResource(R.string.filter_hint)) },
+      )
+    }
+    if (visible.isEmpty()) Text(stringResource(R.string.none_found))
+    visible.take(shown).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+    val left = visible.size - shown
     if (left > 0) {
       OutlinedButton(onClick = { shown += pageSize }) {
         Text(stringResource(R.string.show_more, minOf(pageSize, left), left))

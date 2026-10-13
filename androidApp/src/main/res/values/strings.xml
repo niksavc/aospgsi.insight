@@ -131,5 +131,10 @@
     <string name="resource_lottie">Lottie animation</string>
     <string name="proprietary_namespace_note">This package ID is in Google\'s namespace (com.google.android.*), but that does not prove the app comes from Google: third-party apps sometimes use it. Check the signing key in the Signatures card before trusting it.</string>
 
+    <string name="filter_hint">Filter</string>
+    <string name="cancel">Cancel</string>
+    <string name="fix_confirm_title">Fix this APK?</string>
+    <string name="fix_confirm_message">A new APK will be built and signed with this device\'s key. The file you picked is not changed. Raising the target SDK can change how the app behaves.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

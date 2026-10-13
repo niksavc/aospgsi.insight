@@ -28,6 +28,8 @@ data class ApkInspection(
   val receivers: List<ApkComponent> = emptyList(),
   val providers: List<ApkComponent> = emptyList(),
   val metaData: Map<String, String> = emptyMap(),
+  /** JSON files inside the APK (res/raw, assets); Lottie animations are told apart. */
+  val jsonResources: List<ApkResourceFile> = emptyList(),
   /** SHA-256 of the file the user picked (an APK or a bundle such as .apks/.xapk/.apkm). */
   val sha256: String? = null,
   /** Null when the signature could not be checked at all. */
@@ -68,6 +70,13 @@ data class ApkInspection(
       )
   }
 }
+
+enum class ResourceKind {
+  LOTTIE,
+  JSON,
+}
+
+data class ApkResourceFile(val path: String, val sizeBytes: Long, val kind: ResourceKind)
 
 data class ApkComponent(val name: String, val exported: Boolean)
 

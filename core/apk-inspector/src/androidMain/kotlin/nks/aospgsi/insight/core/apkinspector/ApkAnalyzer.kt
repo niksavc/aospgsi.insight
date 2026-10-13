@@ -13,6 +13,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
+import nks.aospgsi.insight.core.model.ApkResourceFile
 import nks.aospgsi.insight.core.model.NativeLibraryInfo
 
 /**
@@ -90,6 +91,7 @@ class ApkAnalyzer(private val context: Context) {
         receivers = info.receivers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
         providers = info.providers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
         metaData = readMetaData(appInfo?.metaData),
+        jsonResources = inspectJsonResources(apk),
         sha256 = sha256,
         signatureVerified = signature.verified,
         signatureSchemes = signature.schemes,
@@ -217,6 +219,26 @@ class ApkAnalyzer(private val context: Context) {
       emptyList()
     }
 
+  /** JSON files (res/raw, assets, ...); Lottie animations are told apart by their header keys. */
+  private fun inspectJsonResources(apk: File): List<ApkResourceFile> =
+    try {
+      ZipFile(apk).use { zip ->
+        zip
+          .entries()
+          .asSequence()
+          .filter { !it.isDirectory && ResourceRules.isJsonResource(it.name) }
+          .take(MAX_JSON_RESOURCES)
+          .map { entry ->
+            val head = readHead(zip, entry, JSON_HEAD_BYTES).toString(Charsets.UTF_8)
+            ApkResourceFile(entry.name, entry.size, ResourceRules.kindOf(head))
+          }
+          .sortedBy { it.path }
+          .toList()
+      }
+    } catch (_: Exception) {
+      emptyList()
+    }
+
   private fun isNativeLibraryPath(name: String): Boolean =
     name.startsWith("lib/") && name.endsWith(".so") && name.split('/').size == 3
 
@@ -293,6 +315,8 @@ class ApkAnalyzer(private val context: Context) {
 
   private companion object {
     const val ELF_HEADER_BYTES = 64 * 1024
+    const val JSON_HEAD_BYTES = 4 * 1024
+    const val MAX_JSON_RESOURCES = 500
 
     /** Value of the hidden ApplicationInfo.FLAG_MULTIARCH (android:multiarch), bit 31. */
     const val FLAG_MULTIARCH = 1 shl 31

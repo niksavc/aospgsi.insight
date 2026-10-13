@@ -113,5 +113,18 @@
     <string name="card_support">Support the project</string>
     <string name="support_body">AOSP GSI Insight is free for inspecting, checking, installing and fixing a single APK. Donations pay for the manager itself; they never unlock downloads of proprietary software.</string>
 
+    <string name="show_more">Show %1$d more (%2$d left)</string>
+    <string name="card_known_libs">Recognized libraries (%1$d)</string>
+    <string name="known_libs_ads_hint">Unity-based apps very often include advertising SDKs. These libraries alone do not prove that the app shows ads.</string>
+    <string name="lib_cat_messaging">messenger</string>
+    <string name="lib_cat_maps">maps</string>
+    <string name="lib_cat_ml">machine learning</string>
+    <string name="lib_cat_androidx">AndroidX</string>
+    <string name="lib_cat_media">media</string>
+    <string name="lib_cat_engine">game engine</string>
+    <string name="card_json_resources">JSON resources (%1$d)</string>
+    <string name="resource_lottie">Lottie animation</string>
+    <string name="proprietary_namespace_note">This package ID is in Google\'s namespace (com.google.android.*), but that does not prove the app comes from Google: third-party apps sometimes use it. Check the signing key in the Signatures card before trusting it.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,9 +27,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +44,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
+import nks.aospgsi.insight.core.apkinspector.LibraryCategory
+import nks.aospgsi.insight.core.apkinspector.NativeLibraryCatalog
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
 import nks.aospgsi.insight.core.installer.DeviceProbe
 import nks.aospgsi.insight.core.installer.InstallEvents
@@ -48,6 +53,8 @@ import nks.aospgsi.insight.core.installer.InstallStatus
 import nks.aospgsi.insight.core.installer.PackageInstallerClient
 import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
+import nks.aospgsi.insight.core.model.ApkResourceFile
+import nks.aospgsi.insight.core.model.ResourceKind
 import nks.aospgsi.insight.core.patchapi.FixPlan
 import nks.aospgsi.insight.core.patchapi.FixPlanner
 import nks.aospgsi.insight.core.verification.DeviceInfo
@@ -454,6 +461,8 @@ fun AospGsiAndroidApp() {
             }
           }
 
+          RecognizedLibrariesCard(apk.nativeLibraries)
+          JsonResourcesCard(apk.jsonResources)
           ComponentCard(R.string.card_activities, apk.activities)
           ComponentCard(R.string.card_services, apk.services)
           ComponentCard(R.string.card_receivers, apk.receivers)
@@ -553,12 +562,21 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun ListCard(title: String, items: List<String>) {
+private fun ListCard(title: String, items: List<String>, pageSize: Int = PAGE_SIZE) {
+  var shown by rememberSaveable(title, items.size) { mutableIntStateOf(pageSize) }
   SectionCard(title) {
     if (items.isEmpty()) Text(stringResource(R.string.none_found))
-    items.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+    items.take(shown).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+    val left = items.size - shown
+    if (left > 0) {
+      OutlinedButton(onClick = { shown += pageSize }) {
+        Text(stringResource(R.string.show_more, minOf(pageSize, left), left))
+      }
+    }
   }
 }
+
+private const val PAGE_SIZE = 25
 
 @Composable
 private fun ComponentCard(@StringRes titleRes: Int, components: List<ApkComponent>) {
@@ -566,5 +584,44 @@ private fun ComponentCard(@StringRes titleRes: Int, components: List<ApkComponen
   ListCard(
     stringResource(titleRes, components.size),
     components.map { if (it.exported) "${it.name} ($exported)" else it.name },
+  )
+}
+
+@Composable
+private fun RecognizedLibrariesCard(paths: List<String>) {
+  val found = remember(paths) { NativeLibraryCatalog.identifyAll(paths) }
+  if (found.isEmpty()) return
+  SectionCard(stringResource(R.string.card_known_libs, found.size)) {
+    found.forEach { (file, lib) ->
+      val category = stringResource(libraryCategoryLabel(lib.category))
+      Text("• $file — ${lib.name} ($category)", style = MaterialTheme.typography.bodySmall)
+    }
+    if (found.any { it.second.adsCommon }) {
+      Text(stringResource(R.string.known_libs_ads_hint), style = MaterialTheme.typography.bodySmall)
+    }
+  }
+}
+
+@StringRes
+private fun libraryCategoryLabel(category: LibraryCategory): Int =
+  when (category) {
+    LibraryCategory.MESSAGING -> R.string.lib_cat_messaging
+    LibraryCategory.MAPS -> R.string.lib_cat_maps
+    LibraryCategory.MACHINE_LEARNING -> R.string.lib_cat_ml
+    LibraryCategory.ANDROIDX -> R.string.lib_cat_androidx
+    LibraryCategory.MEDIA -> R.string.lib_cat_media
+    LibraryCategory.GAME_ENGINE -> R.string.lib_cat_engine
+  }
+
+@Composable
+private fun JsonResourcesCard(files: List<ApkResourceFile>) {
+  if (files.isEmpty()) return
+  val lottie = stringResource(R.string.resource_lottie)
+  ListCard(
+    stringResource(R.string.card_json_resources, files.size),
+    files.map { f ->
+      val kb = "%.1f KB".format(f.sizeBytes / 1024.0)
+      if (f.kind == ResourceKind.LOTTIE) "${f.path} · $lottie · $kb" else "${f.path} · $kb"
+    },
   )
 }

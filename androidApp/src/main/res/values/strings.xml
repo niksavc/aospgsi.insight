@@ -170,5 +170,8 @@
     <string name="apps_below_floor">Targets below API %1$d: this Android would refuse a new install of it.</string>
     <string name="apps_google_namespace">Package ID in Google\'s namespace.</string>
 
+    <string name="card_application">Application attributes</string>
+    <string name="application_note">Values of the manifest\'s application element as Android reads them; unset attributes show their default. usesCleartextTraffic is on by default for apps targeting API 27 or lower.</string>
+
     <string name="safety_note">Security: the APK is analyzed locally. AOSP GSI Insight does not install, run or modify the selected file.</string>
 </resources>

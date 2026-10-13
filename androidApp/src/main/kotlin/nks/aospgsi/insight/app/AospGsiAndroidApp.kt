@@ -60,6 +60,7 @@ import nks.aospgsi.insight.core.installer.PackageInstallerClient
 import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
 import nks.aospgsi.insight.core.model.ApkResourceFile
+import nks.aospgsi.insight.core.model.ApplicationAttributes
 import nks.aospgsi.insight.core.model.ResourceKind
 import nks.aospgsi.insight.core.patchapi.FixPlan
 import nks.aospgsi.insight.core.patchapi.FixPlanner
@@ -487,6 +488,7 @@ fun AospGsiAndroidApp() {
             }
           }
 
+          ApplicationCard(apk.application)
           DistributionCard(apk.metaData)
           RecognizedLibrariesCard(apk)
           JsonResourcesCard(apk.jsonResources)
@@ -713,5 +715,37 @@ private fun DistributionCard(metaData: Map<String, String>) {
       stringResource(R.string.distribution_not_proof),
       style = MaterialTheme.typography.bodySmall,
     )
+  }
+}
+
+@Composable
+private fun ApplicationCard(app: ApplicationAttributes?) {
+  if (app == null) return
+  SectionCard(stringResource(R.string.card_application)) {
+    listOf(
+        "debuggable" to app.debuggable,
+        "allowBackup" to app.allowBackup,
+        "usesCleartextTraffic" to app.usesCleartextTraffic,
+        "largeHeap" to app.largeHeap,
+        "hasCode" to app.hasCode,
+        "extractNativeLibs" to app.extractNativeLibs,
+        "testOnly" to app.testOnly,
+        "persistent" to app.persistent,
+        "supportsRtl" to app.supportsRtl,
+        "hardwareAccelerated" to app.hardwareAccelerated,
+      )
+      .forEach { (name, value) ->
+        Text("${mark(value)} $name", style = MaterialTheme.typography.bodySmall)
+      }
+    listOf(
+        "name" to app.applicationClass,
+        "backupAgent" to app.backupAgent,
+        "process" to app.process,
+        "appCategory" to app.category,
+      )
+      .forEach { (name, value) ->
+        value?.let { Text("• $name: $it", style = MaterialTheme.typography.bodySmall) }
+      }
+    Text(stringResource(R.string.application_note), style = MaterialTheme.typography.bodySmall)
   }
 }

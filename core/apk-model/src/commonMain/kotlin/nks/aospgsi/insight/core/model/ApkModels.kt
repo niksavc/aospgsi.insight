@@ -43,6 +43,8 @@ data class ApkInspection(
    * 64-bit callers). Null when it could not be read.
    */
   val multiArch: Boolean? = null,
+  /** The <application> attributes; null when the package could not be read. */
+  val application: ApplicationAttributes? = null,
 ) {
   val isLegacyRobloxInspectionTarget: Boolean
     get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS
@@ -70,6 +72,26 @@ data class ApkInspection(
       )
   }
 }
+
+/** Attributes of the manifest's <application> element that matter for installing and running. */
+data class ApplicationAttributes(
+  val debuggable: Boolean,
+  val allowBackup: Boolean,
+  /** Effective value: true by default for apps targeting API 27 or lower. */
+  val usesCleartextTraffic: Boolean,
+  val largeHeap: Boolean,
+  val hasCode: Boolean,
+  val extractNativeLibs: Boolean,
+  val testOnly: Boolean,
+  val persistent: Boolean,
+  val supportsRtl: Boolean,
+  val hardwareAccelerated: Boolean,
+  val applicationClass: String?,
+  val backupAgent: String?,
+  val process: String?,
+  /** android:appCategory as written in the manifest (game, audio, ...), null if unset. */
+  val category: String?,
+)
 
 enum class ResourceKind {
   LOTTIE,

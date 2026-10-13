@@ -170,5 +170,8 @@
     <string name="apps_below_floor">Target ниже API %1$d: эта версия Android отказалась бы ставить его заново.</string>
     <string name="apps_google_namespace">Package ID в пространстве имён Google.</string>
 
+    <string name="card_application">Атрибуты приложения</string>
+    <string name="application_note">Значения элемента application манифеста так, как их читает Android; незаданные атрибуты показаны со значениями по умолчанию. usesCleartextTraffic по умолчанию включён у приложений с target API 27 и ниже.</string>
+
     <string name="safety_note">Безопасность: APK анализируется локально. AOSP GSI Insight не устанавливает, не запускает и не изменяет выбранный файл.</string>
 </resources>

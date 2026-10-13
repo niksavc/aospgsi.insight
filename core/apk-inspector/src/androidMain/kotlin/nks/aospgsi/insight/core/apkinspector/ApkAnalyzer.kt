@@ -60,7 +60,18 @@ class ApkAnalyzer(private val context: Context) {
       val libraries = inspectNativeLibraries(apk)
       val abis = libraries.map { it.abi }.distinct().sorted()
       val signature = verifySignatures(apk)
+      val application = appInfo?.let {
+        ApplicationRules.fromFlags(
+          flags = it.flags,
+          targetSdk = it.targetSdkVersion,
+          applicationClass = it.className,
+          backupAgent = it.backupAgentName,
+          process = it.processName,
+          category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) it.category else null,
+        )
+      }
       val warnings = buildList {
+        application?.let { addAll(ApplicationRules.warnings(it)) }
         InspectionRules.packageNameWarning(info.packageName)?.let { add(it) }
         val unsupported = InspectionRules.unsupportedAbis(abis.toSet())
         if (unsupported.isNotEmpty()) {
@@ -97,6 +108,7 @@ class ApkAnalyzer(private val context: Context) {
         signatureSchemes = signature.schemes,
         bundleApks = bundleApks.orEmpty(),
         multiArch = appInfo?.let { (it.flags and FLAG_MULTIARCH) != 0 },
+        application = application,
       )
     } finally {
       picked.delete()

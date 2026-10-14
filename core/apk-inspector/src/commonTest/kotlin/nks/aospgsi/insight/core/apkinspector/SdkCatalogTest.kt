@@ -171,7 +171,7 @@ class BuildTagRulesTest {
           "META-INF/app_release.kotlin_module",
           "META-INF/androidx.compose.ui_ui.version",
           "META-INF/com/android/build/gradle/app-metadata.properties",
-        )
+        ),
       )
     assertEquals(listOf("Java/DEX", "Kotlin", "Jetpack Compose", "Android Gradle Plugin"), tags)
   }

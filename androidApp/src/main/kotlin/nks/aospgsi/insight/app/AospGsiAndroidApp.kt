@@ -63,7 +63,6 @@ import nks.aospgsi.insight.core.installer.DeviceProbe
 import nks.aospgsi.insight.core.installer.InstallEvents
 import nks.aospgsi.insight.core.installer.InstallStatus
 import nks.aospgsi.insight.core.installer.PackageInstallerClient
-import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
 import nks.aospgsi.insight.core.model.ApkResourceFile
 import nks.aospgsi.insight.core.model.ApplicationAttributes
@@ -332,6 +331,7 @@ fun AospGsiAndroidApp() {
                 apk.nativeAbis.joinToString().ifEmpty { "—" },
               )
               AbiSummaryRows(apk.nativeAbis)
+              BuildTagsRow(apk)
               apk.multiArch?.let {
                 InfoRow(
                   stringResource(R.string.label_multiarch),
@@ -470,45 +470,12 @@ fun AospGsiAndroidApp() {
             }
           }
 
-          SectionCard(stringResource(R.string.card_permissions, apk.requestedPermissions.size)) {
-            Text(stringResource(R.string.permissions_note))
-            if (apk.requestedPermissions.isEmpty()) Text(stringResource(R.string.permissions_none))
-            apk.requestedPermissions.forEach {
-              Text("• $it", style = MaterialTheme.typography.bodySmall)
-            }
-          }
-
-          ListCard(
-            stringResource(R.string.card_declared_permissions, apk.declaredPermissions.size),
-            apk.declaredPermissions,
-          )
-
-          SectionCard(stringResource(R.string.card_native_libs, apk.nativeLibraryDetails.size)) {
-            if (apk.nativeLibraryDetails.isEmpty()) Text(stringResource(R.string.native_libs_none))
-            apk.nativeLibraryDetails.forEach { lib ->
-              val elf = mark(lib.elfAlignedTo16Kb)
-              val zip = mark(lib.zipAlignedTo16Kb)
-              Text(
-                "• ${lib.path}" + if (lib.is64Bit) "  [ELF 16K: $elf, ZIP: $zip]" else "",
-                style = MaterialTheme.typography.bodySmall,
-              )
-            }
-          }
-
           ApplicationCard(apk.application)
           DistributionCard(apk.metaData)
           RecognizedLibrariesCard(apk)
           SdkCard(apk)
           JsonResourcesCard(apk.jsonResources)
-          ComponentCard(R.string.card_activities, apk.activities)
-          ComponentCard(R.string.card_services, apk.services)
-          ComponentCard(R.string.card_receivers, apk.receivers)
-          ComponentCard(R.string.card_providers, apk.providers)
-
-          ListCard(
-            stringResource(R.string.card_metadata, apk.metaData.size),
-            apk.metaData.map { (key, value) -> "$key = $value" },
-          )
+          DetailTabsCard(apk)
 
           if (apk.isBundle) {
             ListCard(stringResource(R.string.card_splits, apk.bundleApks.size), apk.bundleApks)
@@ -630,15 +597,6 @@ private fun ListCard(title: String, items: List<String>, pageSize: Int = PAGE_SI
 private const val PAGE_SIZE = 25
 
 @Composable
-private fun ComponentCard(@StringRes titleRes: Int, components: List<ApkComponent>) {
-  val exported = stringResource(R.string.exported_marker)
-  ListCard(
-    stringResource(titleRes, components.size),
-    components.map { if (it.exported) "${it.name} ($exported)" else it.name },
-  )
-}
-
-@Composable
 private fun RecognizedLibrariesCard(apk: ApkInspection) {
   val found =
     remember(apk.nativeLibraries) {
@@ -694,6 +652,20 @@ private fun libraryCategoryLabel(category: LibraryCategory): Int =
     LibraryCategory.CRASH_REPORTING -> R.string.lib_cat_crash
     LibraryCategory.STORAGE -> R.string.lib_cat_storage
   }
+
+@Composable
+private fun BuildTagsRow(apk: ApkInspection) {
+  val tags =
+    remember(apk) {
+      apk.buildTags + listOfNotNull(LibraryCatalog.detectFramework(apk.nativeLibraries))
+    }
+  if (tags.isNotEmpty()) {
+    Text(
+      stringResource(R.string.build_tags, tags.joinToString(" · ")),
+      style = MaterialTheme.typography.bodySmall,
+    )
+  }
+}
 
 @Composable
 private fun AbiSummaryRows(abis: List<String>) {

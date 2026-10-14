@@ -12,6 +12,7 @@ import nks.aospgsi.insight.core.apkinspector.SdkCategory.FRAMEWORK
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.GOOGLE_SERVICES
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.HUAWEI_SERVICES
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.JETPACK
+import nks.aospgsi.insight.core.apkinspector.SdkCategory.LIBRARY
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.LICENSING
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.PAYMENTS
 import nks.aospgsi.insight.core.apkinspector.SdkCategory.PUSH
@@ -31,6 +32,7 @@ enum class SdkCategory {
   HUAWEI_SERVICES,
   FRAMEWORK,
   JETPACK,
+  LIBRARY,
 }
 
 /** What in the APK pointed at the SDK. */
@@ -83,7 +85,7 @@ object SdkCatalog {
       c("com.google.firebase.analytics", "Firebase Analytics", ANALYTICS),
       c("com.google.android.gms.measurement", "Google Analytics for Firebase", ANALYTICS),
       c("com.google.firebase.perf", "Firebase Performance", ANALYTICS),
-      c("com.google.firebase.provider.FirebaseInitProvider", "Firebase", GOOGLE_SERVICES),
+      c("com.google.firebase", "Firebase", GOOGLE_SERVICES),
       c(
         "com.google.android.gms.common.api.GoogleApiActivity",
         "Google Play services client",
@@ -102,6 +104,13 @@ object SdkCatalog {
       m("firebase_analytics_collection_enabled", "Firebase Analytics", ANALYTICS),
       m("google_analytics_adid_collection_enabled", "Firebase Analytics", ANALYTICS),
       m("com.google.android.play.billingclient.version", "Google Play Billing", PAYMENTS),
+      c("com.google.android.datatransport", "Google Data Transport", GOOGLE_SERVICES),
+      // Open-source libraries
+      c("com.jakewharton.processphoenix", "Process Phoenix", LIBRARY),
+      c("com.mikepenz.aboutlibraries", "AboutLibraries", LIBRARY),
+      c("rikka.shizuku", "Shizuku", LIBRARY),
+      m("moe.shizuku", "Shizuku", LIBRARY),
+      p("moe.shizuku.manager.permission", "Shizuku", LIBRARY),
       // Crash reporting, analytics, attribution, engagement
       c("io.sentry", "Sentry", CRASH_REPORTING),
       m("io.sentry.dsn", "Sentry", CRASH_REPORTING),
@@ -143,6 +152,7 @@ object SdkCatalog {
       c("org.apache.cordova", "Apache Cordova", FRAMEWORK),
       c("com.getcapacitor", "Capacitor", FRAMEWORK),
       // Jetpack
+      c("androidx.core.content.FileProvider", "FileProvider", JETPACK),
       c("androidx.work", "WorkManager", JETPACK),
       c("androidx.startup", "App Startup", JETPACK),
       c("androidx.camera", "CameraX", JETPACK),
@@ -160,6 +170,12 @@ object SdkCatalog {
         ATTRIBUTION,
       ),
     )
+
+  /** The SDK a single component class belongs to, or null. For a badge next to a list row. */
+  fun identify(componentName: String): SdkMatch? =
+    rules
+      .firstOrNull { it.kind == COMPONENT && componentName.startsWith(it.prefix) }
+      ?.let { SdkMatch(it.name, it.category, COMPONENT, componentName) }
 
   /** One match per SDK name, taking the first piece of evidence, sorted by category then name. */
   fun detect(

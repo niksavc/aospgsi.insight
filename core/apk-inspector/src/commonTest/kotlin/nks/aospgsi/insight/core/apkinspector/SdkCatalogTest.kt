@@ -67,6 +67,51 @@ class SdkCatalogTest {
   }
 
   @Test
+  fun identifiesASingleComponentForABadge() {
+    assertEquals(
+      "Process Phoenix",
+      SdkCatalog.identify("com.jakewharton.processphoenix.PhoenixActivity")?.name,
+    )
+    assertEquals("Shizuku", SdkCatalog.identify("rikka.shizuku.ShizukuProvider")?.name)
+    assertEquals(
+      "Firebase",
+      SdkCatalog.identify("com.google.firebase.sessions.SessionLifecycleService")?.name,
+    )
+    assertEquals(
+      "Firebase Analytics",
+      SdkCatalog.identify("com.google.android.gms.measurement.AppMeasurementService")?.name,
+    )
+    assertEquals(
+      "Room",
+      SdkCatalog.identify("androidx.room.MultiInstanceInvalidationService")?.name,
+    )
+    assertEquals("FileProvider", SdkCatalog.identify("androidx.core.content.FileProvider")?.name)
+    assertNull(SdkCatalog.identify(".features.home.ui.MainActivity"))
+  }
+
+  @Test
+  fun specificFirebaseRulesWinOverTheGenericOne() {
+    assertEquals(
+      "Firebase Cloud Messaging",
+      SdkCatalog.identify("com.google.firebase.messaging.FirebaseMessagingService")?.name,
+    )
+    assertEquals(
+      "Firebase Crashlytics",
+      SdkCatalog.identify("com.google.firebase.crashlytics.internal.Foo")?.name,
+    )
+  }
+
+  @Test
+  fun shizukuIsFoundFromMetaDataAndPermission() {
+    val found =
+      detect(
+        meta = listOf("moe.shizuku.client.V3_SUPPORT"),
+        permissions = listOf("moe.shizuku.manager.permission.API_V23"),
+      )
+    assertEquals(listOf("Shizuku"), found.map { it.name })
+  }
+
+  @Test
   fun unknownAndEmptyInputGiveNothing() {
     assertTrue(detect().isEmpty())
     assertTrue(detect(components = listOf("com.example.MainActivity")).isEmpty())
@@ -112,5 +157,27 @@ class AbiRulesTest {
     assertNull(AbiRules.deviceWarning(listOf("arm64-v8a"), emptyList()))
     assertEquals(null, AbiRules.runsOnDevice(emptyList(), listOf("x86_64")))
     assertEquals(true, AbiRules.runsOnDevice(listOf("x86_64"), listOf("x86_64", "x86")))
+  }
+}
+
+class BuildTagRulesTest {
+  @Test
+  fun recognizesTagsFromEntryNames() {
+    val tags =
+      BuildTagRules.fromEntryNames(
+        sequenceOf(
+          "classes.dex",
+          "classes2.dex",
+          "META-INF/app_release.kotlin_module",
+          "META-INF/androidx.compose.ui_ui.version",
+          "META-INF/com/android/build/gradle/app-metadata.properties",
+        )
+      )
+    assertEquals(listOf("Java/DEX", "Kotlin", "Jetpack Compose", "Android Gradle Plugin"), tags)
+  }
+
+  @Test
+  fun nestedDexAndPlainFilesGiveNothing() {
+    assertEquals(emptyList(), BuildTagRules.fromEntryNames(sequenceOf("assets/x.dex", "res/a.png")))
   }
 }

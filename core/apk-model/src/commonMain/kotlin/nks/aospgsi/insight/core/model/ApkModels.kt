@@ -45,6 +45,8 @@ data class ApkInspection(
   val multiArch: Boolean? = null,
   /** The <application> attributes; null when the package could not be read. */
   val application: ApplicationAttributes? = null,
+  /** Build tooling and languages recognized from archive entries, e.g. "Kotlin", "Gradle". */
+  val buildTags: List<String> = emptyList(),
 ) {
   val isLegacyRobloxInspectionTarget: Boolean
     get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS
@@ -100,7 +102,14 @@ enum class ResourceKind {
 
 data class ApkResourceFile(val path: String, val sizeBytes: Long, val kind: ResourceKind)
 
-data class ApkComponent(val name: String, val exported: Boolean)
+data class ApkComponent(
+  val name: String,
+  val exported: Boolean,
+  /** False when the manifest sets android:enabled="false". */
+  val enabled: Boolean = true,
+  /** Process name as resolved by Android (the package name when unset); null if unknown. */
+  val processName: String? = null,
+)
 
 data class NativeLibraryInfo(
   /** APK ZIP path, e.g. lib/arm64-v8a/libexample.so */

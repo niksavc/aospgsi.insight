@@ -212,4 +212,20 @@
     <string name="apps_category_maps">Карты</string>
     <string name="apps_category_productivity">Продуктивность</string>
     <string name="apps_category_accessibility">Спец. возможности</string>
+    <string name="tab_native_libs">Нативные библиотеки</string>
+    <string name="tab_services">Сервисы</string>
+    <string name="tab_activities">Активности</string>
+    <string name="tab_receivers">Ресиверы</string>
+    <string name="tab_providers">Провайдеры</string>
+    <string name="tab_permissions">Разрешения</string>
+    <string name="tab_metadata">Метаданные</string>
+    <string name="items_count">Элементов: %1$d</string>
+    <string name="sort_az_on">Сортировка А–Я</string>
+    <string name="sort_az_off">Сортировать А–Я</string>
+    <string name="perm_group_dangerous">Опасные (спрашивают пользователя)</string>
+    <string name="perm_group_signature">Подписи / привилегированные</string>
+    <string name="perm_group_normal">Обычные</string>
+    <string name="perm_group_unknown">Неизвестны на этом устройстве</string>
+    <string name="perm_group_declared">Объявлены этим приложением</string>
+    <string name="build_tags">Собрано с: %1$s</string>
 </resources>

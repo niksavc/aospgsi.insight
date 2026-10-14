@@ -1,6 +1,7 @@
 package nks.aospgsi.insight.core.apkinspector
 
 import android.content.Context
+import android.content.pm.ComponentInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -15,6 +16,9 @@ import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
 import nks.aospgsi.insight.core.model.ApkResourceFile
 import nks.aospgsi.insight.core.model.NativeLibraryInfo
+
+private fun toComponent(info: ComponentInfo) =
+  ApkComponent(info.name, info.exported, info.enabled, info.processName)
 
 /**
  * Read-only inspector for a user-selected APK or APK bundle (.apks, .xapk, .apkm). Call from a
@@ -98,10 +102,10 @@ class ApkAnalyzer(private val context: Context) {
         nativeLibraries = libraries.map { it.path },
         nativeLibraryDetails = libraries,
         declaredPermissions = info.permissions?.map { it.name }.orEmpty().sorted(),
-        activities = info.activities?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        services = info.services?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        receivers = info.receivers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        providers = info.providers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
+        activities = info.activities?.map(::toComponent).orEmpty(),
+        services = info.services?.map(::toComponent).orEmpty(),
+        receivers = info.receivers?.map(::toComponent).orEmpty(),
+        providers = info.providers?.map(::toComponent).orEmpty(),
         metaData = readMetaData(appInfo?.metaData),
         jsonResources = inspectJsonResources(apk),
         sha256 = sha256,
@@ -110,6 +114,7 @@ class ApkAnalyzer(private val context: Context) {
         bundleApks = bundleApks.orEmpty(),
         multiArch = appInfo?.let { (it.flags and FLAG_MULTIARCH) != 0 },
         application = application,
+        buildTags = inspectBuildTags(apk),
       )
     } finally {
       picked.delete()
@@ -227,6 +232,16 @@ class ApkAnalyzer(private val context: Context) {
           }
           .sortedBy { it.path }
           .toList()
+      }
+    } catch (_: Exception) {
+      emptyList()
+    }
+
+  /** Languages and build tools recognized from entry names in the archive. */
+  private fun inspectBuildTags(apk: File): List<String> =
+    try {
+      ZipFile(apk).use { zip ->
+        BuildTagRules.fromEntryNames(zip.entries().asSequence().map { it.name })
       }
     } catch (_: Exception) {
       emptyList()

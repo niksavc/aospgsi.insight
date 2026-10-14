@@ -212,4 +212,20 @@
     <string name="apps_category_maps">Maps</string>
     <string name="apps_category_productivity">Productivity</string>
     <string name="apps_category_accessibility">Accessibility</string>
+    <string name="tab_native_libs">Native libraries</string>
+    <string name="tab_services">Services</string>
+    <string name="tab_activities">Activities</string>
+    <string name="tab_receivers">Receivers</string>
+    <string name="tab_providers">Providers</string>
+    <string name="tab_permissions">Permissions</string>
+    <string name="tab_metadata">Metadata</string>
+    <string name="items_count">Items: %1$d</string>
+    <string name="sort_az_on">Sorted A–Z</string>
+    <string name="sort_az_off">Sort A–Z</string>
+    <string name="perm_group_dangerous">Dangerous (asks the user)</string>
+    <string name="perm_group_signature">Signature / privileged</string>
+    <string name="perm_group_normal">Normal</string>
+    <string name="perm_group_unknown">Unknown on this device</string>
+    <string name="perm_group_declared">Declared by this app</string>
+    <string name="build_tags">Built with: %1$s</string>
 </resources>

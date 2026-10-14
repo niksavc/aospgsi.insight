@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.annotation.StringRes
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +51,25 @@ private data class InstalledRow(
   val versionName: String?,
   val targetSdk: Int,
   val system: Boolean,
+  /** ApplicationInfo.category (API 26+); -1 when undefined or not available. */
+  val category: Int,
 )
+
+/** Labels for ApplicationInfo.CATEGORY_* values, by their documented integer values. */
+@StringRes
+private fun categoryLabel(category: Int): Int =
+  when (category) {
+    0 -> R.string.apps_category_game
+    1 -> R.string.apps_category_audio
+    2 -> R.string.apps_category_video
+    3 -> R.string.apps_category_image
+    4 -> R.string.apps_category_social
+    5 -> R.string.apps_category_news
+    6 -> R.string.apps_category_maps
+    7 -> R.string.apps_category_productivity
+    8 -> R.string.apps_category_accessibility
+    else -> R.string.apps_category_none
+  }
 
 @Composable
 private fun InstalledAppsScreen(onBack: () -> Unit) {
@@ -57,6 +78,7 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
   var query by rememberSaveable { mutableStateOf("") }
   var showSystem by rememberSaveable { mutableStateOf(false) }
   var onlyBelowFloor by rememberSaveable { mutableStateOf(false) }
+  var selectedCategory by rememberSaveable { mutableStateOf<Int?>(null) }
   val floor = remember { InstallPolicy.minimumInstallableTargetSdk(Build.VERSION.SDK_INT) }
 
   LaunchedEffect(Unit) {
@@ -73,6 +95,8 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
               versionName = info.versionName,
               targetSdk = app.targetSdkVersion,
               system = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+              category =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
             )
           }
           .sortedBy { it.label.lowercase() }
@@ -101,8 +125,28 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
       if (all == null) {
         Text(stringResource(R.string.apps_loading))
       } else {
+        val inScope = all.filter { showSystem || !it.system }
+        val categories =
+          inScope.groupingBy { it.category.coerceAtLeast(-1) }.eachCount().toSortedMap()
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          item {
+            FilterChip(
+              selected = selectedCategory == null,
+              onClick = { selectedCategory = null },
+              label = { Text(stringResource(R.string.apps_category_all) + " (${inScope.size})") },
+            )
+          }
+          items(categories.entries.toList(), key = { it.key }) { (category, count) ->
+            FilterChip(
+              selected = selectedCategory == category,
+              onClick = { selectedCategory = if (selectedCategory == category) null else category },
+              label = { Text(stringResource(categoryLabel(category)) + " ($count)") },
+            )
+          }
+        }
         val visible = all.filter { row ->
-          (showSystem || !row.system) &&
+          (selectedCategory == null || selectedCategory == row.category.coerceAtLeast(-1)) &&
+            (showSystem || !row.system) &&
             (!onlyBelowFloor || (floor != null && row.targetSdk < floor)) &&
             (query.isBlank() ||
               row.label.contains(query.trim(), ignoreCase = true) ||

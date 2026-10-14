@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -47,11 +48,16 @@ import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nks.aospgsi.insight.core.apkinspector.AbiRules
+import nks.aospgsi.insight.core.apkinspector.AbiSupport
 import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
 import nks.aospgsi.insight.core.apkinspector.DistributionRules
 import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
+import nks.aospgsi.insight.core.apkinspector.EvidenceKind
 import nks.aospgsi.insight.core.apkinspector.LibraryCategory
+import nks.aospgsi.insight.core.apkinspector.SdkCatalog
+import nks.aospgsi.insight.core.apkinspector.SdkCategory
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
 import nks.aospgsi.insight.core.installer.DeviceProbe
 import nks.aospgsi.insight.core.installer.InstallEvents
@@ -325,6 +331,7 @@ fun AospGsiAndroidApp() {
                 stringResource(R.string.label_abi),
                 apk.nativeAbis.joinToString().ifEmpty { "—" },
               )
+              AbiSummaryRows(apk.nativeAbis)
               apk.multiArch?.let {
                 InfoRow(
                   stringResource(R.string.label_multiarch),
@@ -491,6 +498,7 @@ fun AospGsiAndroidApp() {
           ApplicationCard(apk.application)
           DistributionCard(apk.metaData)
           RecognizedLibrariesCard(apk)
+          SdkCard(apk)
           JsonResourcesCard(apk.jsonResources)
           ComponentCard(R.string.card_activities, apk.activities)
           ComponentCard(R.string.card_services, apk.services)
@@ -683,6 +691,82 @@ private fun libraryCategoryLabel(category: LibraryCategory): Int =
     LibraryCategory.MEDIA -> R.string.lib_cat_media
     LibraryCategory.GAME_ENGINE -> R.string.lib_cat_engine
     LibraryCategory.RUNTIME -> R.string.lib_cat_runtime
+    LibraryCategory.CRASH_REPORTING -> R.string.lib_cat_crash
+    LibraryCategory.STORAGE -> R.string.lib_cat_storage
+  }
+
+@Composable
+private fun AbiSummaryRows(abis: List<String>) {
+  val support = remember(abis) { AbiRules.support(abis) }
+  val label =
+    stringResource(
+      when (support) {
+        AbiSupport.NO_NATIVE -> R.string.abi_support_none
+        AbiSupport.ONLY_32_BIT -> R.string.abi_support_32
+        AbiSupport.ONLY_64_BIT -> R.string.abi_support_64
+        AbiSupport.BOTH -> R.string.abi_support_both
+      }
+    )
+  Text(label, style = MaterialTheme.typography.bodySmall)
+  val device = remember { Build.SUPPORTED_ABIS?.toList().orEmpty() }
+  val runs = remember(abis) { AbiRules.runsOnDevice(abis, device) }
+  if (runs != null) {
+    val verdict =
+      stringResource(if (runs) R.string.abi_device_ok else R.string.abi_device_no)
+    Text(
+      stringResource(R.string.abi_this_device, device.joinToString()) + " — " + verdict,
+      style = MaterialTheme.typography.bodySmall,
+      color = if (runs) Color.Unspecified else MaterialTheme.colorScheme.error,
+    )
+  }
+}
+
+@Composable
+private fun SdkCard(apk: ApkInspection) {
+  val found =
+    remember(apk) {
+      val components =
+        (apk.activities + apk.services + apk.receivers + apk.providers).map { it.name }
+      SdkCatalog.detect(components, apk.metaData.keys, apk.requestedPermissions)
+    }
+  if (found.isEmpty()) return
+  SectionCard(stringResource(R.string.card_sdks, found.size)) {
+    found.forEach { sdk ->
+      val category = stringResource(sdkCategoryLabel(sdk.category))
+      val evidence = stringResource(sdkEvidenceLabel(sdk.evidence))
+      Text(
+        "• ${sdk.name} ($category; $evidence: ${sdk.matched})",
+        style = MaterialTheme.typography.bodySmall,
+      )
+    }
+    Text(stringResource(R.string.sdks_note), style = MaterialTheme.typography.bodySmall)
+  }
+}
+
+@StringRes
+private fun sdkCategoryLabel(category: SdkCategory): Int =
+  when (category) {
+    SdkCategory.ANALYTICS -> R.string.sdk_cat_analytics
+    SdkCategory.CRASH_REPORTING -> R.string.sdk_cat_crash
+    SdkCategory.PUSH -> R.string.sdk_cat_push
+    SdkCategory.ATTRIBUTION -> R.string.sdk_cat_attribution
+    SdkCategory.ENGAGEMENT -> R.string.sdk_cat_engagement
+    SdkCategory.PAYMENTS -> R.string.sdk_cat_payments
+    SdkCategory.LICENSING -> R.string.sdk_cat_licensing
+    SdkCategory.ADVERTISING_ID -> R.string.sdk_cat_ad_id
+    SdkCategory.SOCIAL -> R.string.sdk_cat_social
+    SdkCategory.GOOGLE_SERVICES -> R.string.sdk_cat_google
+    SdkCategory.HUAWEI_SERVICES -> R.string.sdk_cat_huawei
+    SdkCategory.FRAMEWORK -> R.string.sdk_cat_framework
+    SdkCategory.JETPACK -> R.string.sdk_cat_jetpack
+  }
+
+@StringRes
+private fun sdkEvidenceLabel(kind: EvidenceKind): Int =
+  when (kind) {
+    EvidenceKind.COMPONENT -> R.string.sdk_evidence_component
+    EvidenceKind.META_DATA -> R.string.sdk_evidence_meta
+    EvidenceKind.PERMISSION -> R.string.sdk_evidence_permission
   }
 
 @Composable

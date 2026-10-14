@@ -77,6 +77,7 @@ class ApkAnalyzer(private val context: Context) {
         if (unsupported.isNotEmpty()) {
           add("Unrecognized ABIs: ${unsupported.sorted().joinToString()}")
         }
+        AbiRules.deviceWarning(abis, Build.SUPPORTED_ABIS?.toList().orEmpty())?.let { add(it) }
         addAll(InspectionRules.sixteenKbWarnings(libraries))
         if (!signature.verified) add("The APK signature could not be verified.")
       }

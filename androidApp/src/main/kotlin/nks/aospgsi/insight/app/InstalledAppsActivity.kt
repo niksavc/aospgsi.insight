@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.annotation.StringRes
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,8 +95,7 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
               versionName = info.versionName,
               targetSdk = app.targetSdkVersion,
               system = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-              category =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
+              category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
             )
           }
           .sortedBy { it.label.lowercase() }

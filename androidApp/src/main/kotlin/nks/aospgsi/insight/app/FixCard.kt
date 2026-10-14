@@ -44,6 +44,8 @@ internal fun FixCard(
   onCloneChange: (Boolean) -> Unit,
   patchState: PatchState,
   aapt2Ready: Boolean,
+  /** True while a repair runs, so Fix and Repair never start together. */
+  otherJobRunning: Boolean = false,
   onFix: (FixPlan.Ready) -> Unit,
 ) {
   val fixable =
@@ -126,7 +128,7 @@ internal fun FixCard(
 
       Button(
         onClick = { if (plan is FixPlan.Ready) confirming = true },
-        enabled = plan is FixPlan.Ready && aapt2Ready && !running,
+        enabled = plan is FixPlan.Ready && aapt2Ready && !running && !otherJobRunning,
       ) {
         Text(stringResource(if (running) R.string.fix_running else R.string.fix_button))
       }

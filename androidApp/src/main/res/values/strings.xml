@@ -229,4 +229,13 @@
     <string name="perm_group_declared">Declared by this app</string>
     <string name="build_tags">Built with: %1$s</string>
     <string name="sdk_cat_library">open-source library</string>
+    <string name="card_repair">Repair APK</string>
+    <string name="repair_intro">Use this when an archiver app or another tool saved the APK again and Android now says it is corrupt or cannot be parsed. The content is not changed: the archive is rebuilt in the layout Android requires and signed again with this device\'s key.</string>
+    <string name="repair_limits">It does not raise the target SDK or rename the package (use Fix for that), and a truncated or unreadable file cannot be repaired. The new signature differs from the original, so an installed copy signed by someone else will not update.</string>
+    <string name="repair_bundle_unavailable">Bundles (.apks, .xapk, .apkm) cannot be repaired as a whole. Extract the base APK and open that.</string>
+    <string name="repair_button">Repair</string>
+    <string name="repair_running">Repairing…</string>
+    <string name="repair_confirm_title">Repair this APK?</string>
+    <string name="repair_confirm_message">A new APK will be built and signed with this device\'s key. The file you picked is not changed.</string>
+    <string name="repair_failed">Repair failed (%1$s): %2$s</string>
 </resources>

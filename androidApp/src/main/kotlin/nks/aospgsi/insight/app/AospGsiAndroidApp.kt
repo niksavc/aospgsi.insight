@@ -135,7 +135,8 @@ private fun stageSource(
   uri: Uri,
   expectedSha256: String?,
   packageName: String,
-  plan: FixPlan.Ready,
+  /** What to change, or null to only re-align and re-sign (repair). */
+  plan: FixPlan.Ready?,
 ): PatchRequest {
   val target = File(context.cacheDir, "patch-source.apk")
   val digest = MessageDigest.getInstance("SHA-256")
@@ -157,7 +158,13 @@ private fun stageSource(
     target.delete()
     throw IOException("The file changed after it was inspected. Inspect it again.")
   }
-  return PatchRequest(target.path, packageName, plan.targetSdk, plan.newPackage)
+  return PatchRequest(
+    target.path,
+    packageName,
+    plan?.targetSdk,
+    plan?.newPackage,
+    repairOnly = plan == null,
+  )
 }
 
 @Composable
@@ -173,6 +180,8 @@ fun AospGsiAndroidApp() {
   var device by remember { mutableStateOf<DeviceInfo?>(null) }
   var cloneChoice by remember { mutableStateOf(false) }
   var patchedNote by remember { mutableStateOf(false) }
+  // Whether the last patch job was a repair, so its progress shows on the Repair card only.
+  var repairRun by remember { mutableStateOf(false) }
   var pendingRequest by remember { mutableStateOf<PatchRequest?>(null) }
   val patchState by PatchEvents.state.collectAsState()
   val busy = status is AnalysisStatus.Analyzing
@@ -409,6 +418,35 @@ fun AospGsiAndroidApp() {
                 InstallPolicy.minimumInstallableTargetSdk(deviceInfo.sdk),
                 cloneChoice,
               )
+            val startPatch: (FixPlan.Ready?) -> Unit = { ready ->
+              val uri = pickedUri
+              val packageName = apk.packageName
+              if (uri != null && packageName != null) {
+                repairRun = ready == null
+                PatchEvents.state.value =
+                  PatchState.Running(0, if (ready == null) "align" else "decode")
+                scope.launch {
+                  try {
+                    val request =
+                      withContext(Dispatchers.IO) {
+                        stageSource(context, uri, apk.sha256, packageName, ready)
+                      }
+                    val needsPermission =
+                      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                          PackageManager.PERMISSION_GRANTED
+                    if (needsPermission) {
+                      pendingRequest = request
+                      notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                      PatchService.start(context, request)
+                    }
+                  } catch (e: Exception) {
+                    PatchEvents.state.value = PatchState.Failed("prepare", e.message)
+                  }
+                }
+              }
+            }
             FixCard(
               apk = apk,
               assessment = check,
@@ -416,35 +454,16 @@ fun AospGsiAndroidApp() {
               plan = plan,
               cloneAlongside = cloneChoice,
               onCloneChange = { cloneChoice = it },
-              patchState = patchState,
+              patchState = if (repairRun) PatchState.Idle else patchState,
               aapt2Ready = Aapt2Provider.find(context) != null,
-              onFix = { ready ->
-                val uri = pickedUri
-                val packageName = apk.packageName
-                if (uri != null && packageName != null) {
-                  PatchEvents.state.value = PatchState.Running(0, "decode")
-                  scope.launch {
-                    try {
-                      val request =
-                        withContext(Dispatchers.IO) {
-                          stageSource(context, uri, apk.sha256, packageName, ready)
-                        }
-                      val needsPermission =
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                          context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                            PackageManager.PERMISSION_GRANTED
-                      if (needsPermission) {
-                        pendingRequest = request
-                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                      } else {
-                        PatchService.start(context, request)
-                      }
-                    } catch (e: Exception) {
-                      PatchEvents.state.value = PatchState.Failed("prepare", e.message)
-                    }
-                  }
-                }
-              },
+              otherJobRunning = repairRun && patchState is PatchState.Running,
+              onFix = { startPatch(it) },
+            )
+            RepairCard(
+              apk = apk,
+              patchState = if (repairRun) patchState else PatchState.Idle,
+              anyRunning = patchState is PatchState.Running,
+              onRepair = { startPatch(null) },
             )
           }
 

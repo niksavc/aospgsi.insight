@@ -229,4 +229,13 @@
     <string name="perm_group_declared">Объявлены этим приложением</string>
     <string name="build_tags">Собрано с: %1$s</string>
     <string name="sdk_cat_library">библиотека с открытым кодом</string>
+    <string name="card_repair">Починить APK</string>
+    <string name="repair_intro">Используйте, когда архиватор или другой инструмент пересохранил APK и Android теперь пишет, что файл повреждён или не разбирается. Содержимое не меняется: архив пересобирается в нужном Android виде и заново подписывается ключом этого устройства.</string>
+    <string name="repair_limits">Это не поднимает target SDK и не меняет имя пакета (для этого есть «Исправить»), а обрезанный или нечитаемый файл починить нельзя. Подпись будет отличаться от исходной, поэтому установленная копия, подписанная другим ключом, не обновится.</string>
+    <string name="repair_bundle_unavailable">Пакеты (.apks, .xapk, .apkm) целиком починить нельзя. Достаньте базовый APK и откройте его.</string>
+    <string name="repair_button">Починить</string>
+    <string name="repair_running">Чиню…</string>
+    <string name="repair_confirm_title">Починить этот APK?</string>
+    <string name="repair_confirm_message">Будет собран новый APK, подписанный ключом этого устройства. Выбранный файл не изменяется.</string>
+    <string name="repair_failed">Не удалось починить (%1$s): %2$s</string>
 </resources>

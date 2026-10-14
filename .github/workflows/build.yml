@@ -145,6 +145,11 @@ jobs:
               echo "::error title=$f::$msg"
             fi
           done
+          # Assertion messages of failed unit tests (the XML reports hold what Gradle's log omits).
+          find . -path '*/build/test-results/*' -name 'TEST-*.xml' | while read -r x; do
+            m=$(grep -o '<failure message="[^"]*' "$x" | head -n 3 | cut -c1-700 | sed 's/&#10;/ | /g; s/&quot;/"/g; s/&lt;/</g; s/&gt;/>/g; s/&amp;/\&/g' || true)
+            if [ -n "$m" ]; then echo "::error title=$(basename "$x")::$m"; fi
+          done
 
       - name: Upload build diagnostics
         if: failure()

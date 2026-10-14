@@ -730,6 +730,7 @@ private fun sdkCategoryLabel(category: SdkCategory): Int =
     SdkCategory.HUAWEI_SERVICES -> R.string.sdk_cat_huawei
     SdkCategory.FRAMEWORK -> R.string.sdk_cat_framework
     SdkCategory.JETPACK -> R.string.sdk_cat_jetpack
+    SdkCategory.LIBRARY -> R.string.sdk_cat_library
   }
 
 @StringRes

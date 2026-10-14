@@ -228,4 +228,5 @@
     <string name="perm_group_unknown">Unknown on this device</string>
     <string name="perm_group_declared">Declared by this app</string>
     <string name="build_tags">Built with: %1$s</string>
+    <string name="sdk_cat_library">open-source library</string>
 </resources>

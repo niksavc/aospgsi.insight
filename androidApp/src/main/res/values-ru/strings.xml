@@ -228,4 +228,5 @@
     <string name="perm_group_unknown">Неизвестны на этом устройстве</string>
     <string name="perm_group_declared">Объявлены этим приложением</string>
     <string name="build_tags">Собрано с: %1$s</string>
+    <string name="sdk_cat_library">библиотека с открытым кодом</string>
 </resources>

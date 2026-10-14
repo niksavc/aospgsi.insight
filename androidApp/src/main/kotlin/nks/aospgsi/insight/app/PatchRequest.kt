@@ -10,6 +10,8 @@ data class PatchRequest(
   val packageName: String,
   val targetSdk: Int?,
   val newPackage: String?,
+  /** Only re-align and re-sign; no manifest change, no aapt2. For archives broken by a tool. */
+  val repairOnly: Boolean = false,
 ) {
   val patches: List<ApkPatch>
     get() =
@@ -24,12 +26,14 @@ data class PatchRequest(
       .putExtra(EXTRA_PACKAGE, packageName)
       .putExtra(EXTRA_TARGET_SDK, targetSdk ?: NO_TARGET_SDK)
       .putExtra(EXTRA_NEW_PACKAGE, newPackage)
+      .putExtra(EXTRA_REPAIR, repairOnly)
 
   companion object {
     private const val EXTRA_SOURCE = "source"
     private const val EXTRA_PACKAGE = "package"
     private const val EXTRA_TARGET_SDK = "targetSdk"
     private const val EXTRA_NEW_PACKAGE = "newPackage"
+    private const val EXTRA_REPAIR = "repairOnly"
     private const val NO_TARGET_SDK = -1
 
     fun fromIntent(intent: Intent): PatchRequest? {
@@ -37,7 +41,13 @@ data class PatchRequest(
       val packageName = intent.getStringExtra(EXTRA_PACKAGE) ?: return null
       val target =
         intent.getIntExtra(EXTRA_TARGET_SDK, NO_TARGET_SDK).takeIf { it != NO_TARGET_SDK }
-      return PatchRequest(source, packageName, target, intent.getStringExtra(EXTRA_NEW_PACKAGE))
+      return PatchRequest(
+        source,
+        packageName,
+        target,
+        intent.getStringExtra(EXTRA_NEW_PACKAGE),
+        intent.getBooleanExtra(EXTRA_REPAIR, false),
+      )
     }
   }
 }

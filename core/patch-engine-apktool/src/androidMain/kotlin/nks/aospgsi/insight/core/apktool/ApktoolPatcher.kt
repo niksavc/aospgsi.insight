@@ -1,14 +1,10 @@
 package nks.aospgsi.insight.core.apktool
 
-import android.os.Build
 import brut.androlib.ApkBuilder
 import brut.androlib.ApkDecoder
 import brut.androlib.Config
 import brut.androlib.meta.ApkInfo
-import com.android.apksig.ApkSigner
-import com.android.apksig.ApkVerifier
 import java.io.File
-import java.security.MessageDigest
 import nks.aospgsi.insight.core.model.PatchProgress
 import nks.aospgsi.insight.core.model.PatchResult
 import nks.aospgsi.insight.core.patchapi.ApkPatch
@@ -80,53 +76,26 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
       progress(PatchProgress(stage, 80, "Signing"))
       output.absoluteFile.parentFile?.mkdirs()
       val minSdk = ApkInfo.load(decoded).sdkInfo.minSdkVersion?.toIntOrNull()
-      sign(aligned, output, key, minSdk)
+      ApkSigning.sign(aligned, output, key, minSdk)
 
       stage = "verify"
       progress(PatchProgress(stage, 92, "Verifying"))
-      if (!verifySignature(output)) {
+      if (!ApkSigning.verify(output)) {
         output.delete()
         return PatchResult.Failure(stage, "The signed APK did not pass signature verification.")
       }
 
       progress(PatchProgress("done", 100, "Done"))
-      return PatchResult.Success(output.absolutePath, sha256(output))
+      return PatchResult.Success(output.absolutePath, ApkSigning.sha256(output))
     } catch (e: OutOfMemoryError) {
       return PatchResult.Failure(stage, "Out of memory while patching this APK.")
     } catch (e: Exception) {
-      return PatchResult.Failure(stage, describe(e))
+      return PatchResult.Failure(stage, ApkSigning.describe(e))
     } catch (e: LinkageError) {
-      return PatchResult.Failure(stage, describe(e))
+      return PatchResult.Failure(stage, ApkSigning.describe(e))
     } finally {
       work.deleteRecursively()
     }
-  }
-
-  /**
-   * apksig's v1 verifier needs Type.getTypeName() (API 26+). On older releases only the schemes
-   * that release itself would use are checked, and if the verifier still cannot run, the platform's
-   * own package installer is the check: it rejects a bad signature at install time.
-   */
-  private fun verifySignature(apk: File): Boolean =
-    try {
-      val builder = ApkVerifier.Builder(apk)
-      if (Build.VERSION.SDK_INT in 1 until Build.VERSION_CODES.O) { // 0 on host JVM tests
-        builder.setMinCheckedPlatformVersion(Build.VERSION.SDK_INT)
-      }
-      builder.build().verify().isVerified
-    } catch (_: LinkageError) {
-      true
-    }
-
-  /** The message plus the chain of causes, since wrappers such as apksig hide the real reason. */
-  private fun describe(error: Throwable): String {
-    val parts = mutableListOf<String>()
-    var current: Throwable? = error
-    while (current != null && parts.size < 4) {
-      parts += current.message ?: current.javaClass.simpleName
-      current = current.cause?.takeIf { it !== current }
-    }
-    return parts.joinToString(" <- ")
   }
 
   private fun config(decoding: Boolean): Config =
@@ -160,37 +129,6 @@ class ApktoolPatcher(private val environment: ApktoolEnvironment) {
       }
     }
     info.save(decoded)
-  }
-
-  private fun sign(input: File, output: File, key: SigningKey, minSdk: Int?) {
-    val signer = ApkSigner.SignerConfig.Builder("aospgsi", key.privateKey, key.certificates).build()
-    val builder =
-      ApkSigner.Builder(listOf(signer))
-        .setInputApk(input)
-        .setOutputApk(output)
-        .setV1SigningEnabled(true)
-        .setV2SigningEnabled(true)
-        .setV3SigningEnabled(true)
-        .setV4SigningEnabled(false)
-        .setCreatedBy("AOSP GSI Insight")
-        // Keep the 4-byte / 16 KiB alignment that ZipAligner established.
-        .setAlignmentPreserved(true)
-        .setLibraryPageAlignmentBytes(ZipAligner.NATIVE_LIB_ALIGNMENT)
-    if (minSdk != null) builder.setMinSdkVersion(minSdk)
-    builder.build().sign()
-  }
-
-  private fun sha256(file: File): String {
-    val digest = MessageDigest.getInstance("SHA-256")
-    file.inputStream().use { input ->
-      val buffer = ByteArray(64 * 1024)
-      while (true) {
-        val read = input.read(buffer)
-        if (read < 0) break
-        digest.update(buffer, 0, read)
-      }
-    }
-    return digest.digest().joinToString("") { "%02x".format(it) }
   }
 
   companion object {

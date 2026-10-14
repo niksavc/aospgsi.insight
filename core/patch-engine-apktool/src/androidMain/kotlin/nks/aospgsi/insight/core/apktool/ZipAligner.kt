@@ -26,11 +26,23 @@ internal object ZipAligner {
   private const val LOCAL_HEADER_SIZE = 30
   private const val ALIGNMENT_EXTRA_ID = 0xD935
 
-  fun align(input: File, output: File) {
+  /** True for the v1 (JAR) signature files in META-INF, which a re-signing makes stale. */
+  fun isJarSignatureFile(name: String): Boolean {
+    val upper = name.uppercase()
+    if (!upper.startsWith("META-INF/") || upper.count { it == '/' } != 1) return false
+    return upper == "META-INF/MANIFEST.MF" ||
+      listOf(".SF", ".RSA", ".DSA", ".EC").any { upper.endsWith(it) }
+  }
+
+  /**
+   * @param skip entries to leave out of the output (for example old signature files).
+   */
+  fun align(input: File, output: File, skip: (String) -> Boolean = { false }) {
     ZipFile(input).use { zip ->
       val counting = CountingOutputStream(BufferedOutputStream(FileOutputStream(output), 1 shl 16))
       ZipOutputStream(counting).use { out ->
         for (entry in zip.entries()) {
+          if (skip(entry.name)) continue
           val copy = ZipEntry(entry.name)
           copy.time = FIXED_TIME
           if (!entry.isDirectory && (entry.method == ZipEntry.STORED || mustStore(entry.name))) {

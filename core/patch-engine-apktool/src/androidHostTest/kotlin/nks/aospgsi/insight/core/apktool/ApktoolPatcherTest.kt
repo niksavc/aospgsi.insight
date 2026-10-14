@@ -252,4 +252,80 @@ class ApktoolPatcherTest {
       dir.deleteRecursively()
     }
   }
+
+  /** Rewrites a zip the way an archiver app does: everything deflated, no alignment. */
+  private fun rewriteLikeArchiver(input: File, output: File) {
+    java.util.zip.ZipFile(input).use { zip ->
+      java.util.zip.ZipOutputStream(output.outputStream()).use { out ->
+        for (entry in zip.entries()) {
+          out.putNextEntry(java.util.zip.ZipEntry(entry.name))
+          if (!entry.isDirectory) zip.getInputStream(entry).use { it.copyTo(out) }
+          out.closeEntry()
+        }
+      }
+    }
+  }
+
+  @Test
+  fun repairsAnApkDamagedByAnArchiver() {
+    val dir = tempDir()
+    try {
+      val framework = File(dir, "framework")
+      framework.mkdirs()
+      val fixture = buildFixtureApk(dir, framework)
+      val originalKey = generateKey(dir)
+      val signed = File(dir, "signed.apk")
+      ApkSigning.sign(fixture, signed, originalKey, minSdk = 24)
+      assertTrue(ApkVerifier.Builder(signed).build().verify().isVerified)
+
+      // Saving the APK again with an archiver destroys the signing block and the layout.
+      val damaged = File(dir, "damaged.apk")
+      rewriteLikeArchiver(signed, damaged)
+      assertTrue(!ApkVerifier.Builder(damaged).build().verify().isVerified)
+
+      val output = File(dir, "repaired.apk")
+      val stages = mutableListOf<PatchProgress>()
+      val result = ApkRepairer(File(dir, "work")).repair(damaged, output, generateKey(dir)) {
+        stages += it
+      }
+
+      val success = assertIs<PatchResult.Success>(result, "repair failed: $result")
+      assertEquals(100, stages.last().percent)
+      assertTrue(ApkVerifier.Builder(output).build().verify().isVerified)
+      val offsets = ZipOffsets.read(output).associateBy { it.name }
+      assertEquals(0, offsets.getValue("resources.arsc").method)
+      assertEquals(0L, offsets.getValue("resources.arsc").dataOffset % 4)
+      assertEquals(0L, offsets.getValue("lib/arm64-v8a/libfake.so").dataOffset % 16384)
+      assertEquals(64, success.sha256?.length)
+      assertTrue(!File(dir, "work").listFiles().orEmpty().any { it.name.startsWith("repair-") })
+    } finally {
+      dir.deleteRecursively()
+    }
+  }
+
+  @Test
+  fun repairReportsAnUnreadableArchive() {
+    val dir = tempDir()
+    try {
+      val broken = File(dir, "broken.apk").apply { writeBytes(ByteArray(2048) { 7 }) }
+      val result =
+        ApkRepairer(File(dir, "work")).repair(broken, File(dir, "out.apk"), generateKey(dir))
+      val failure = assertIs<PatchResult.Failure>(result)
+      assertEquals("align", failure.stage)
+      assertTrue(!File(dir, "out.apk").exists())
+    } finally {
+      dir.deleteRecursively()
+    }
+  }
+
+  @Test
+  fun recognizesJarSignatureFiles() {
+    assertTrue(ZipAligner.isJarSignatureFile("META-INF/MANIFEST.MF"))
+    assertTrue(ZipAligner.isJarSignatureFile("META-INF/CERT.SF"))
+    assertTrue(ZipAligner.isJarSignatureFile("META-INF/cert.rsa"))
+    assertTrue(!ZipAligner.isJarSignatureFile("META-INF/services/x.SF"))
+    assertTrue(!ZipAligner.isJarSignatureFile("assets/CERT.SF"))
+    val metadata = "META-INF/com/android/build/gradle/app-metadata.properties"
+    assertTrue(!ZipAligner.isJarSignatureFile(metadata))
+  }
 }

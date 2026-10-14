@@ -34,9 +34,7 @@ internal object ZipAligner {
       listOf(".SF", ".RSA", ".DSA", ".EC").any { upper.endsWith(it) }
   }
 
-  /**
-   * @param skip entries to leave out of the output (for example old signature files).
-   */
+  /** @param skip entries to leave out of the output (for example old signature files). */
   fun align(input: File, output: File, skip: (String) -> Boolean = { false }) {
     ZipFile(input).use { zip ->
       val counting = CountingOutputStream(BufferedOutputStream(FileOutputStream(output), 1 shl 16))

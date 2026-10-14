@@ -285,9 +285,10 @@ class ApktoolPatcherTest {
 
       val output = File(dir, "repaired.apk")
       val stages = mutableListOf<PatchProgress>()
-      val result = ApkRepairer(File(dir, "work")).repair(damaged, output, generateKey(dir)) {
-        stages += it
-      }
+      val result =
+        ApkRepairer(File(dir, "work")).repair(damaged, output, generateKey(dir)) {
+          stages += it
+        }
 
       val success = assertIs<PatchResult.Success>(result, "repair failed: $result")
       assertEquals(100, stages.last().percent)

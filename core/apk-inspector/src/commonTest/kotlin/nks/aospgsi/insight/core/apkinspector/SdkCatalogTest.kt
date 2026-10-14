@@ -78,7 +78,7 @@ class SdkCatalogTest {
       SdkCatalog.identify("com.google.firebase.sessions.SessionLifecycleService")?.name,
     )
     assertEquals(
-      "Firebase Analytics",
+      "Google Analytics for Firebase",
       SdkCatalog.identify("com.google.android.gms.measurement.AppMeasurementService")?.name,
     )
     assertEquals(

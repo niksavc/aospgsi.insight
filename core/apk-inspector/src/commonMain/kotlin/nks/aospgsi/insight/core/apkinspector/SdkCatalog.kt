@@ -177,7 +177,7 @@ object SdkCatalog {
       .firstOrNull { it.kind == COMPONENT && componentName.startsWith(it.prefix) }
       ?.let { SdkMatch(it.name, it.category, COMPONENT, componentName) }
 
-  /** One match per SDK name, taking the first piece of evidence, sorted by category then name. */
+  /** One match per SDK name, taking the first piece of evidence, sorted by category and name. */
   fun detect(
     componentNames: Collection<String>,
     metaDataKeys: Collection<String>,
@@ -185,11 +185,12 @@ object SdkCatalog {
   ): List<SdkMatch> {
     val found = linkedMapOf<String, SdkMatch>()
 
+    // Each value is credited to the first rule that matches it, so a specific rule (Firebase Cloud
+    // Messaging) is not repeated by a broader one (Firebase).
     fun scan(kind: EvidenceKind, values: Collection<String>) {
-      for (rule in rules) {
-        if (rule.kind != kind || rule.name in found) continue
-        val hit = values.firstOrNull { it.startsWith(rule.prefix) } ?: continue
-        found[rule.name] = SdkMatch(rule.name, rule.category, kind, hit)
+      for (value in values) {
+        val rule = rules.firstOrNull { it.kind == kind && value.startsWith(it.prefix) } ?: continue
+        if (rule.name !in found) found[rule.name] = SdkMatch(rule.name, rule.category, kind, value)
       }
     }
 

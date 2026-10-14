@@ -53,8 +53,8 @@ import nks.aospgsi.insight.core.apkinspector.AbiSupport
 import nks.aospgsi.insight.core.apkinspector.AdSdkCatalog
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
 import nks.aospgsi.insight.core.apkinspector.DistributionRules
-import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
 import nks.aospgsi.insight.core.apkinspector.EvidenceKind
+import nks.aospgsi.insight.core.apkinspector.LibraryCatalog
 import nks.aospgsi.insight.core.apkinspector.LibraryCategory
 import nks.aospgsi.insight.core.apkinspector.SdkCatalog
 import nks.aospgsi.insight.core.apkinspector.SdkCategory
@@ -705,14 +705,13 @@ private fun AbiSummaryRows(abis: List<String>) {
         AbiSupport.ONLY_32_BIT -> R.string.abi_support_32
         AbiSupport.ONLY_64_BIT -> R.string.abi_support_64
         AbiSupport.BOTH -> R.string.abi_support_both
-      }
+      },
     )
   Text(label, style = MaterialTheme.typography.bodySmall)
   val device = remember { Build.SUPPORTED_ABIS?.toList().orEmpty() }
   val runs = remember(abis) { AbiRules.runsOnDevice(abis, device) }
   if (runs != null) {
-    val verdict =
-      stringResource(if (runs) R.string.abi_device_ok else R.string.abi_device_no)
+    val verdict = stringResource(if (runs) R.string.abi_device_ok else R.string.abi_device_no)
     Text(
       stringResource(R.string.abi_this_device, device.joinToString()) + " — " + verdict,
       style = MaterialTheme.typography.bodySmall,

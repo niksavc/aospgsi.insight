@@ -276,12 +276,14 @@ class ApktoolPatcherTest {
       val originalKey = generateKey(dir)
       val signed = File(dir, "signed.apk")
       ApkSigning.sign(fixture, signed, originalKey, minSdk = 24)
-      assertTrue(ApkVerifier.Builder(signed).build().verify().isVerified)
+      assertTrue(ApkVerifier.Builder(signed).build().verify().isVerified, "fixture signing")
 
       // Saving the APK again with an archiver destroys the signing block and the layout.
       val damaged = File(dir, "damaged.apk")
       rewriteLikeArchiver(signed, damaged)
-      assertTrue(!ApkVerifier.Builder(damaged).build().verify().isVerified)
+      // The v1 files survive a rewrite and still verify; the v2/v3 signing block does not.
+      val damagedResult = ApkVerifier.Builder(damaged).build().verify()
+      assertTrue(!damagedResult.isVerifiedUsingV2Scheme, "v2 block should be gone")
 
       val output = File(dir, "repaired.apk")
       val stages = mutableListOf<PatchProgress>()
@@ -292,11 +294,17 @@ class ApktoolPatcherTest {
 
       val success = assertIs<PatchResult.Success>(result, "repair failed: $result")
       assertEquals(100, stages.last().percent)
-      assertTrue(ApkVerifier.Builder(output).build().verify().isVerified)
+      val verified = ApkVerifier.Builder(output).build().verify()
+      assertTrue(verified.isVerified, "repaired APK: ${verified.errors} ${verified.allErrors}")
+      assertTrue(verified.isVerifiedUsingV2Scheme, "repaired APK has no v2 block")
       val offsets = ZipOffsets.read(output).associateBy { it.name }
-      assertEquals(0, offsets.getValue("resources.arsc").method)
-      assertEquals(0L, offsets.getValue("resources.arsc").dataOffset % 4)
-      assertEquals(0L, offsets.getValue("lib/arm64-v8a/libfake.so").dataOffset % 16384)
+      assertEquals(0, offsets.getValue("resources.arsc").method, "arsc stored")
+      assertEquals(0L, offsets.getValue("resources.arsc").dataOffset % 4, "arsc aligned")
+      assertEquals(
+        0L,
+        offsets.getValue("lib/arm64-v8a/libfake.so").dataOffset % 16384,
+        "so aligned to 16 KiB",
+      )
       assertEquals(64, success.sha256?.length)
       assertTrue(!File(dir, "work").listFiles().orEmpty().any { it.name.startsWith("repair-") })
     } finally {

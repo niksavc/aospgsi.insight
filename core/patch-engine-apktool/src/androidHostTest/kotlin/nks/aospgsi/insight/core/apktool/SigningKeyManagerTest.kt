@@ -188,7 +188,7 @@ class SigningKeyManagerTest {
       }
       val output = File(second, "out.apk")
       ApkSigning.sign(input, output, after.active(), minSdk = 24)
-      val result = ApkVerifier.Builder(output).build().verify()
+      val result = ApkVerifier.Builder(output).setMinCheckedPlatformVersion(24).build().verify()
       assertTrue(result.isVerified, "${result.errors} ${result.allErrors}")
       assertEquals(
         created.sha256,

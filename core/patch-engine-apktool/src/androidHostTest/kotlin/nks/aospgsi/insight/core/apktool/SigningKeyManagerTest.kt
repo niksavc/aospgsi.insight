@@ -4,6 +4,8 @@ import com.android.apksig.ApkVerifier
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -182,6 +184,9 @@ class SigningKeyManagerTest {
       // The imported key signs an APK that Android's verifier accepts, under the same certificate.
       val input = File(second, "in.apk")
       ZipOutputStream(input.outputStream()).use {
+        it.putNextEntry(ZipEntry("AndroidManifest.xml"))
+        it.write(emptyManifest())
+        it.closeEntry()
         it.putNextEntry(ZipEntry("classes.dex"))
         it.write(ByteArray(64) { b -> b.toByte() })
         it.closeEntry()
@@ -269,5 +274,27 @@ class SigningKeyManagerTest {
     } finally {
       dir.deleteRecursively()
     }
+  }
+
+  /** The smallest binary manifest apksig accepts: an empty `<manifest/>` element. */
+  private fun emptyManifest(): ByteArray {
+    val buffer = ByteBuffer.allocate(120).order(ByteOrder.LITTLE_ENDIAN)
+    // File header.
+    buffer.putShort(0x0003).putShort(8).putInt(120)
+    // String pool with one UTF-16 string, "manifest".
+    buffer.putShort(0x0001).putShort(28).putInt(52)
+    buffer.putInt(1).putInt(0).putInt(0).putInt(32).putInt(0)
+    buffer.putInt(0)
+    buffer.putShort(8)
+    "manifest".forEach { buffer.putChar(it) }
+    buffer.putShort(0)
+    // <manifest>
+    buffer.putShort(0x0102).putShort(16).putInt(36).putInt(1).putInt(-1)
+    buffer.putInt(-1).putInt(0)
+    buffer.putShort(20).putShort(20).putShort(0).putShort(0).putShort(0).putShort(0)
+    // </manifest>
+    buffer.putShort(0x0103).putShort(16).putInt(24).putInt(1).putInt(-1)
+    buffer.putInt(-1).putInt(0)
+    return buffer.array()
   }
 }

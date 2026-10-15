@@ -28,6 +28,8 @@ data class ApkInspection(
   val receivers: List<ApkComponent> = emptyList(),
   val providers: List<ApkComponent> = emptyList(),
   val metaData: Map<String, String> = emptyMap(),
+  /** JSON files inside the APK (res/raw, assets); Lottie animations are told apart. */
+  val jsonResources: List<ApkResourceFile> = emptyList(),
   /** SHA-256 of the file the user picked (an APK or a bundle such as .apks/.xapk/.apkm). */
   val sha256: String? = null,
   /** Null when the signature could not be checked at all. */
@@ -41,6 +43,10 @@ data class ApkInspection(
    * 64-bit callers). Null when it could not be read.
    */
   val multiArch: Boolean? = null,
+  /** The <application> attributes; null when the package could not be read. */
+  val application: ApplicationAttributes? = null,
+  /** Build tooling and languages recognized from archive entries, e.g. "Kotlin", "Gradle". */
+  val buildTags: List<String> = emptyList(),
 ) {
   val isLegacyRobloxInspectionTarget: Boolean
     get() = packageName in LEGACY_ROBLOX_PACKAGE_IDS
@@ -69,7 +75,41 @@ data class ApkInspection(
   }
 }
 
-data class ApkComponent(val name: String, val exported: Boolean)
+/** Attributes of the manifest's <application> element that matter for installing and running. */
+data class ApplicationAttributes(
+  val debuggable: Boolean,
+  val allowBackup: Boolean,
+  /** Effective value: true by default for apps targeting API 27 or lower. */
+  val usesCleartextTraffic: Boolean,
+  val largeHeap: Boolean,
+  val hasCode: Boolean,
+  val extractNativeLibs: Boolean,
+  val testOnly: Boolean,
+  val persistent: Boolean,
+  val supportsRtl: Boolean,
+  val hardwareAccelerated: Boolean,
+  val applicationClass: String?,
+  val backupAgent: String?,
+  val process: String?,
+  /** android:appCategory as written in the manifest (game, audio, ...), null if unset. */
+  val category: String?,
+)
+
+enum class ResourceKind {
+  LOTTIE,
+  JSON,
+}
+
+data class ApkResourceFile(val path: String, val sizeBytes: Long, val kind: ResourceKind)
+
+data class ApkComponent(
+  val name: String,
+  val exported: Boolean,
+  /** False when the manifest sets android:enabled="false". */
+  val enabled: Boolean = true,
+  /** Process name as resolved by Android (the package name when unset); null if unknown. */
+  val processName: String? = null,
+)
 
 data class NativeLibraryInfo(
   /** APK ZIP path, e.g. lib/arm64-v8a/libexample.so */

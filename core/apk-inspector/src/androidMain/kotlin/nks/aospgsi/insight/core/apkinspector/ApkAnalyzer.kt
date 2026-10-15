@@ -1,6 +1,7 @@
 package nks.aospgsi.insight.core.apkinspector
 
 import android.content.Context
+import android.content.pm.ComponentInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,7 +14,11 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import nks.aospgsi.insight.core.model.ApkComponent
 import nks.aospgsi.insight.core.model.ApkInspection
+import nks.aospgsi.insight.core.model.ApkResourceFile
 import nks.aospgsi.insight.core.model.NativeLibraryInfo
+
+private fun toComponent(info: ComponentInfo) =
+  ApkComponent(info.name, info.exported, info.enabled, info.processName)
 
 /**
  * Read-only inspector for a user-selected APK or APK bundle (.apks, .xapk, .apkm). Call from a
@@ -37,69 +42,107 @@ class ApkAnalyzer(private val context: Context) {
           }
         }
 
-      val info =
-        getPackageInfo(apk.absolutePath)
-          ?: throw IOException("Android could not read the APK manifest.")
-      val appInfo = info.applicationInfo
-      if (appInfo != null) {
-        appInfo.sourceDir = apk.absolutePath
-        appInfo.publicSourceDir = apk.absolutePath
-      }
-      val label =
-        try {
-          if (appInfo != null) {
-            context.packageManager.getApplicationLabel(appInfo).toString()
-          } else {
-            info.packageName ?: "Unknown app"
-          }
-        } catch (_: Exception) {
-          info.packageName ?: "Unknown app"
-        }
-
-      val libraries = inspectNativeLibraries(apk)
-      val abis = libraries.map { it.abi }.distinct().sorted()
-      val signature = verifySignatures(apk)
-      val warnings = buildList {
-        InspectionRules.packageNameWarning(info.packageName)?.let { add(it) }
-        val unsupported = InspectionRules.unsupportedAbis(abis.toSet())
-        if (unsupported.isNotEmpty()) {
-          add("Unrecognized ABIs: ${unsupported.sorted().joinToString()}")
-        }
-        addAll(InspectionRules.sixteenKbWarnings(libraries))
-        if (!signature.verified) add("The APK signature could not be verified.")
-      }
-
-      return ApkInspection(
-        packageName = info.packageName,
-        versionName = info.versionName,
-        versionCode = getVersionCode(info),
-        minSdk = appInfo?.minSdkVersion,
-        targetSdk = appInfo?.targetSdkVersion,
-        signerSha256 = signature.certificateSha256,
-        nativeAbis = abis,
-        warnings = warnings,
-        fileName = queryDisplayName(uri) ?: "selected.apk",
-        fileSizeBytes = picked.length(),
-        appLabel = label,
-        requestedPermissions = info.requestedPermissions?.toList().orEmpty().sorted(),
-        nativeLibraries = libraries.map { it.path },
-        nativeLibraryDetails = libraries,
-        declaredPermissions = info.permissions?.map { it.name }.orEmpty().sorted(),
-        activities = info.activities?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        services = info.services?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        receivers = info.receivers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        providers = info.providers?.map { ApkComponent(it.name, it.exported) }.orEmpty(),
-        metaData = readMetaData(appInfo?.metaData),
-        sha256 = sha256,
-        signatureVerified = signature.verified,
-        signatureSchemes = signature.schemes,
-        bundleApks = bundleApks.orEmpty(),
-        multiArch = appInfo?.let { (it.flags and FLAG_MULTIARCH) != 0 },
+      return inspect(
+        apk,
+        queryDisplayName(uri) ?: "selected.apk",
+        picked.length(),
+        sha256,
+        bundleApks.orEmpty(),
       )
     } finally {
       picked.delete()
       extractedBase?.delete()
     }
+  }
+
+  /**
+   * Inspects an APK that stays where it is, such as an installed app's base APK. Nothing is copied
+   * and no SHA-256 is computed. Split APKs of the app are not read.
+   */
+  fun analyzeInstalled(apk: File): ApkInspection =
+    inspect(apk, apk.name, apk.length(), null, emptyList())
+
+  private fun inspect(
+    apk: File,
+    fileName: String,
+    fileSize: Long,
+    sha256: String?,
+    bundleApks: List<String>,
+  ): ApkInspection {
+    val info =
+      getPackageInfo(apk.absolutePath)
+        ?: throw IOException("Android could not read the APK manifest.")
+    val appInfo = info.applicationInfo
+    if (appInfo != null) {
+      appInfo.sourceDir = apk.absolutePath
+      appInfo.publicSourceDir = apk.absolutePath
+    }
+    val label =
+      try {
+        if (appInfo != null) {
+          context.packageManager.getApplicationLabel(appInfo).toString()
+        } else {
+          info.packageName ?: "Unknown app"
+        }
+      } catch (_: Exception) {
+        info.packageName ?: "Unknown app"
+      }
+
+    val libraries = inspectNativeLibraries(apk)
+    val abis = libraries.map { it.abi }.distinct().sorted()
+    val signature = verifySignatures(apk)
+    val application = appInfo?.let {
+      ApplicationRules.fromFlags(
+        flags = it.flags,
+        targetSdk = it.targetSdkVersion,
+        applicationClass = it.className,
+        backupAgent = it.backupAgentName,
+        process = it.processName,
+        category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) it.category else null,
+      )
+    }
+    val warnings = buildList {
+      application?.let { addAll(ApplicationRules.warnings(it)) }
+      InspectionRules.packageNameWarning(info.packageName)?.let { add(it) }
+      val unsupported = InspectionRules.unsupportedAbis(abis.toSet())
+      if (unsupported.isNotEmpty()) {
+        add("Unrecognized ABIs: ${unsupported.sorted().joinToString()}")
+      }
+      AbiRules.deviceWarning(abis, Build.SUPPORTED_ABIS?.toList().orEmpty())?.let { add(it) }
+      addAll(InspectionRules.sixteenKbWarnings(libraries))
+      if (!signature.verified) add("The APK signature could not be verified.")
+    }
+
+    return ApkInspection(
+      packageName = info.packageName,
+      versionName = info.versionName,
+      versionCode = getVersionCode(info),
+      minSdk = appInfo?.minSdkVersion,
+      targetSdk = appInfo?.targetSdkVersion,
+      signerSha256 = signature.certificateSha256,
+      nativeAbis = abis,
+      warnings = warnings,
+      fileName = fileName,
+      fileSizeBytes = fileSize,
+      appLabel = label,
+      requestedPermissions = info.requestedPermissions?.toList().orEmpty().sorted(),
+      nativeLibraries = libraries.map { it.path },
+      nativeLibraryDetails = libraries,
+      declaredPermissions = info.permissions?.map { it.name }.orEmpty().sorted(),
+      activities = info.activities?.map(::toComponent).orEmpty(),
+      services = info.services?.map(::toComponent).orEmpty(),
+      receivers = info.receivers?.map(::toComponent).orEmpty(),
+      providers = info.providers?.map(::toComponent).orEmpty(),
+      metaData = readMetaData(appInfo?.metaData),
+      jsonResources = inspectJsonResources(apk),
+      sha256 = sha256,
+      signatureVerified = signature.verified,
+      signatureSchemes = signature.schemes,
+      bundleApks = bundleApks,
+      multiArch = appInfo?.let { (it.flags and FLAG_MULTIARCH) != 0 },
+      application = application,
+      buildTags = inspectBuildTags(apk),
+    )
   }
 
   /** Copies the picked document to [dest] and returns its SHA-256 as lowercase hex. */
@@ -217,6 +260,36 @@ class ApkAnalyzer(private val context: Context) {
       emptyList()
     }
 
+  /** Languages and build tools recognized from entry names in the archive. */
+  private fun inspectBuildTags(apk: File): List<String> =
+    try {
+      ZipFile(apk).use { zip ->
+        BuildTagRules.fromEntryNames(zip.entries().asSequence().map { it.name })
+      }
+    } catch (_: Exception) {
+      emptyList()
+    }
+
+  /** JSON files (res/raw, assets, ...); Lottie animations are told apart by their header keys. */
+  private fun inspectJsonResources(apk: File): List<ApkResourceFile> =
+    try {
+      ZipFile(apk).use { zip ->
+        zip
+          .entries()
+          .asSequence()
+          .filter { !it.isDirectory && ResourceRules.isJsonResource(it.name) }
+          .take(MAX_JSON_RESOURCES)
+          .map { entry ->
+            val head = readHead(zip, entry, JSON_HEAD_BYTES).toString(Charsets.UTF_8)
+            ApkResourceFile(entry.name, entry.size, ResourceRules.kindOf(head))
+          }
+          .sortedBy { it.path }
+          .toList()
+      }
+    } catch (_: Exception) {
+      emptyList()
+    }
+
   private fun isNativeLibraryPath(name: String): Boolean =
     name.startsWith("lib/") && name.endsWith(".so") && name.split('/').size == 3
 
@@ -293,6 +366,8 @@ class ApkAnalyzer(private val context: Context) {
 
   private companion object {
     const val ELF_HEADER_BYTES = 64 * 1024
+    const val JSON_HEAD_BYTES = 4 * 1024
+    const val MAX_JSON_RESOURCES = 500
 
     /** Value of the hidden ApplicationInfo.FLAG_MULTIARCH (android:multiarch), bit 31. */
     const val FLAG_MULTIARCH = 1 shl 31

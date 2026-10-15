@@ -9,7 +9,7 @@ import android.os.IBinder
 import android.util.Log
 import java.io.File
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
-import nks.aospgsi.insight.core.apktool.AndroidKeystoreSigningKey
+import nks.aospgsi.insight.core.apktool.ApkRepairer
 import nks.aospgsi.insight.core.apktool.ApktoolEnvironment
 import nks.aospgsi.insight.core.apktool.ApktoolPatcher
 import nks.aospgsi.insight.core.model.PatchResult
@@ -95,25 +95,22 @@ class PatchService : Service() {
 
   private fun patch(request: PatchRequest, source: File): PatchResult {
     val aapt2 =
-      Aapt2Provider.find(this)
-        ?: return PatchResult.Failure("aapt2", "aapt2 is not available in this build.")
+      if (request.repairOnly) {
+        null
+      } else {
+        Aapt2Provider.find(this)
+          ?: return PatchResult.Failure("aapt2", "aapt2 is not available in this build.")
+      }
 
     val outDir = File(filesDir, "patched")
     outDir.deleteRecursively()
     outDir.mkdirs()
     val output = File(outDir, request.packageName.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".apk")
 
-    val environment =
-      ApktoolEnvironment(
-        workDir = File(cacheDir, "patch-work").apply { mkdirs() },
-        frameworkDir = File(filesDir, "apktool-framework"),
-        aaptBinary = aapt2,
-        jobs = 2,
-      )
-    val key = AndroidKeystoreSigningKey.getOrCreate()
+    val key = signingKeyManager(this).active()
     val manager = getSystemService(android.app.NotificationManager::class.java)
     var lastPercent = -1
-    return ApktoolPatcher(environment).patch(source, output, request.patches, key) { progress ->
+    val report = { progress: nks.aospgsi.insight.core.model.PatchProgress ->
       PatchEvents.state.value = PatchState.Running(progress.percent, progress.stage)
       if (progress.percent != lastPercent) {
         lastPercent = progress.percent
@@ -124,6 +121,19 @@ class PatchService : Service() {
         )
       }
     }
+    if (request.repairOnly) {
+      return ApkRepairer(File(cacheDir, "patch-work").apply { mkdirs() })
+        .repair(source, output, key, report)
+    }
+
+    val environment =
+      ApktoolEnvironment(
+        workDir = File(cacheDir, "patch-work").apply { mkdirs() },
+        frameworkDir = File(filesDir, "apktool-framework"),
+        aaptBinary = aapt2,
+        jobs = 2,
+      )
+    return ApktoolPatcher(environment).patch(source, output, request.patches, key, report)
   }
 
   private fun stageText(stage: String): String = stageLabel(this, stage)

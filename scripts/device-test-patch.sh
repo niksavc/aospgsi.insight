@@ -111,4 +111,49 @@ if [ "$SDK" -lt 34 ]; then
   adb shell pm list packages | grep -qx "package:com.example.legacy"
   echo "original and clone are installed side by side"
 fi
+
+echo "== Repair: an APK re-saved by an archiver (everything deflated, signing block gone)"
+python3 - "$WORK/legacy.apk" "$WORK/damaged.apk" <<'PY'
+import sys, zipfile
+src, dst = sys.argv[1:3]
+with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
+    for info in zin.infolist():
+        zout.writestr(info.filename, zin.read(info.filename))
+PY
+adb shell "rm -rf /data/data/$PKG/files/patched"
+adb push "$WORK/damaged.apk" /data/local/tmp/damaged.apk >/dev/null
+adb shell "cp /data/local/tmp/damaged.apk /data/data/$PKG/cache/patch-source.apk && chown $OWNER:$OWNER /data/data/$PKG/cache/patch-source.apk && chmod 644 /data/data/$PKG/cache/patch-source.apk && restorecon /data/data/$PKG/cache/patch-source.apk"
+# logcat -c does not reliably empty the buffer on every release, so count result lines instead.
+before=$(adb logcat -d -s AospGsiPatch:I | grep -c "result=" || true)
+adb shell am $START -n "$PKG/nks.aospgsi.insight.app.PatchService" \
+  --es source "/data/data/$PKG/cache/patch-source.apk" \
+  --es package com.example.legacy \
+  --ez repairOnly true
+result=""
+for i in $(seq 1 24); do
+  now=$(adb logcat -d -s AospGsiPatch:I | grep -c "result=" || true)
+  if [ "$now" -gt "$before" ]; then
+    result=$(adb logcat -d -s AospGsiPatch:I | grep -E "result=" | tail -n 1)
+    break
+  fi
+  sleep 5
+done
+adb logcat -d -s AospGsiPatch:I | cut -c1-300
+echo "$result" | grep -q "result=success" || { echo "repair did not succeed: $result"; exit 1; }
+adb pull "/data/data/$PKG/files/patched/com.example.legacy.apk" "$WORK/repaired.apk" >/dev/null
+"$BT/apksigner" verify --print-certs "$WORK/repaired.apk" | head -n 5
+"$BT/apksigner" verify --print-certs "$WORK/repaired.apk" | grep -q "certificate DN: CN=AOSP GSI Insight, O=niksavc, C=RU"
+"$BT/aapt2" dump badging "$WORK/repaired.apk" | grep -q "package: name='com.example.legacy'"
+"$BT/aapt2" dump badging "$WORK/repaired.apk" | grep -q "targetSdkVersion:'19'"
+if [ "$SDK" -lt 34 ]; then
+  # The repaired file has the device key, so the fixture-signed original must go first.
+  adb uninstall com.example.legacy >/dev/null
+  adb install "$WORK/repaired.apk"
+  adb shell pm list packages | grep -qx "package:com.example.legacy"
+  echo "repaired APK installs"
+else
+  out=$(adb install "$WORK/repaired.apk" 2>&1 || true)
+  echo "$out"
+  echo "$out" | grep -q "DEPRECATED_SDK_VERSION"
+fi
 echo "device patch test passed"

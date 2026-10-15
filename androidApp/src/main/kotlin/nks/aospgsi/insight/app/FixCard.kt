@@ -12,11 +12,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import nks.aospgsi.insight.app.ui.ConfirmDialog
 import nks.aospgsi.insight.core.model.ApkInspection
 import nks.aospgsi.insight.core.patchapi.FixPlan
 import nks.aospgsi.insight.core.patchapi.FixUnavailableReason
@@ -39,6 +44,8 @@ internal fun FixCard(
   onCloneChange: (Boolean) -> Unit,
   patchState: PatchState,
   aapt2Ready: Boolean,
+  /** True while a repair runs, so Fix and Repair never start together. */
+  otherJobRunning: Boolean = false,
   onFix: (FixPlan.Ready) -> Unit,
 ) {
   val fixable =
@@ -104,9 +111,24 @@ internal fun FixCard(
 
       if (!aapt2Ready) Text(stringResource(R.string.fix_no_aapt2))
 
+      var confirming by rememberSaveable { mutableStateOf(false) }
+      if (confirming && plan is FixPlan.Ready) {
+        ConfirmDialog(
+          title = stringResource(R.string.fix_confirm_title),
+          message = stringResource(R.string.fix_confirm_message),
+          confirmText = stringResource(R.string.fix_button),
+          dismissText = stringResource(R.string.cancel),
+          onConfirm = {
+            confirming = false
+            onFix(plan)
+          },
+          onDismiss = { confirming = false },
+        )
+      }
+
       Button(
-        onClick = { if (plan is FixPlan.Ready) onFix(plan) },
-        enabled = plan is FixPlan.Ready && aapt2Ready && !running,
+        onClick = { if (plan is FixPlan.Ready) confirming = true },
+        enabled = plan is FixPlan.Ready && aapt2Ready && !running && !otherJobRunning,
       ) {
         Text(stringResource(if (running) R.string.fix_running else R.string.fix_button))
       }

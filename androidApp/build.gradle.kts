@@ -23,6 +23,18 @@ android {
     versionName = "0.1.0"
   }
 
+  signingConfigs {
+    // A fixed debug key checked into the repository. Without it every CI run signs with a fresh
+    // random key, and Android refuses to update an installed build with the next one ("App not
+    // installed"). This key is public: it is for test builds only, never for a release.
+    getByName("debug") {
+      storeFile = file("debug.keystore")
+      storePassword = "android"
+      keyAlias = "aospgsi-debug"
+      keyPassword = "android"
+    }
+  }
+
   androidResources {
     // Lists the app's languages (values-*/) for Android 13+ per-app language settings.
     generateLocaleConfig = true

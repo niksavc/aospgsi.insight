@@ -30,7 +30,11 @@ fun ProprietaryCard(packageName: String?) {
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       Text(stringResource(R.string.card_proprietary), style = MaterialTheme.typography.titleLarge)
-      Text(stringResource(R.string.proprietary_body))
+      if (kind == ProprietaryKind.OTHER_GOOGLE_APP) {
+        Text(stringResource(R.string.proprietary_namespace_note))
+      } else {
+        Text(stringResource(R.string.proprietary_body))
+      }
       if (kind == ProprietaryKind.PLAY_STORE || kind == ProprietaryKind.PLAY_SERVICES) {
         Text(stringResource(R.string.proprietary_conflict_hint))
       }

@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import java.text.Collator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.core.verification.InstallPolicy
@@ -53,7 +56,34 @@ private data class InstalledRow(
   val system: Boolean,
   /** ApplicationInfo.category (API 26+); -1 when undefined or not available. */
   val category: Int,
+  val updatedAt: Long,
 )
+
+private enum class SortMode(@StringRes val label: Int) {
+  NAME(R.string.apps_sort_name),
+  NAME_DESC(R.string.apps_sort_name_desc),
+  TARGET_ASC(R.string.apps_sort_target_asc),
+  UPDATED(R.string.apps_sort_updated);
+
+  fun next(): SortMode = entries[(ordinal + 1) % entries.size]
+}
+
+/**
+ * Orders rows by [mode]. Names compare ignoring case and accents, after dropping leading symbols
+ * and spaces, so "(Test)" or " App" do not jump ahead of everything else.
+ */
+private fun sortRows(rows: List<InstalledRow>, mode: SortMode): List<InstalledRow> {
+  val collator = Collator.getInstance().apply { strength = Collator.PRIMARY }
+  fun key(row: InstalledRow) = row.label.trimStart { !it.isLetterOrDigit() }.ifEmpty { row.label }
+  val byName = Comparator<InstalledRow> { a, b -> collator.compare(key(a), key(b)) }
+  return when (mode) {
+    SortMode.NAME -> rows.sortedWith(byName)
+    SortMode.NAME_DESC -> rows.sortedWith(byName.reversed())
+    SortMode.TARGET_ASC -> rows.sortedWith(compareBy<InstalledRow> { it.targetSdk }.then(byName))
+    SortMode.UPDATED ->
+      rows.sortedWith(compareByDescending<InstalledRow> { it.updatedAt }.then(byName))
+  }
+}
 
 /** Labels for ApplicationInfo.CATEGORY_* values, by their documented integer values. */
 @StringRes
@@ -79,6 +109,7 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
   var showSystem by rememberSaveable { mutableStateOf(false) }
   var onlyBelowFloor by rememberSaveable { mutableStateOf(false) }
   var selectedCategory by rememberSaveable { mutableStateOf<Int?>(null) }
+  var sortMode by rememberSaveable { mutableStateOf(SortMode.NAME) }
   val floor = remember { InstallPolicy.minimumInstallableTargetSdk(Build.VERSION.SDK_INT) }
 
   LaunchedEffect(Unit) {
@@ -96,16 +127,16 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
               targetSdk = app.targetSdkVersion,
               system = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
               category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
+              updatedAt = info.lastUpdateTime,
             )
           }
-          .sortedBy { it.label.lowercase() }
       }
   }
 
   ScreenFrame(stringResource(R.string.apps_title), onBack) { padding ->
     Column(
       modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
       OutlinedTextField(
         value = query,
@@ -143,7 +174,8 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
             )
           }
         }
-        val visible = all.filter { row ->
+        val sorted = remember(all, sortMode) { sortRows(all, sortMode) }
+        val visible = sorted.filter { row ->
           (selectedCategory == null || selectedCategory == row.category.coerceAtLeast(-1)) &&
             (showSystem || !row.system) &&
             (!onlyBelowFloor || (floor != null && row.targetSdk < floor)) &&
@@ -151,12 +183,25 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
               row.label.contains(query.trim(), ignoreCase = true) ||
               row.packageName.contains(query.trim(), ignoreCase = true))
         }
-        Text(
-          stringResource(R.string.apps_count, visible.size),
-          style = MaterialTheme.typography.bodySmall,
-        )
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          items(visible, key = { it.packageName }) { AppRowCard(it, floor) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+          Text(
+            stringResource(R.string.apps_count, visible.size),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+          )
+          TextButton(onClick = { sortMode = sortMode.next() }) {
+            Text(stringResource(sortMode.label), style = MaterialTheme.typography.labelLarge)
+          }
+        }
+        LazyColumn(
+          verticalArrangement = Arrangement.spacedBy(6.dp),
+          contentPadding = PaddingValues(bottom = 12.dp),
+        ) {
+          items(visible, key = { it.packageName }) { row ->
+            AppRowCard(row, floor) {
+              context.startActivity(AppDetailActivity.intent(context, row.packageName))
+            }
+          }
         }
       }
     }
@@ -172,30 +217,34 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 }
 
 @Composable
-private fun AppRowCard(row: InstalledRow, floor: Int?) {
-  Card(modifier = Modifier.fillMaxWidth()) {
-    Column(
-      Modifier.fillMaxWidth().padding(12.dp),
-      verticalArrangement = Arrangement.spacedBy(2.dp),
+private fun AppRowCard(row: InstalledRow, floor: Int?, onOpen: () -> Unit) {
+  Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(row.label, style = MaterialTheme.typography.titleMedium)
-      Text(row.packageName, style = MaterialTheme.typography.bodySmall)
-      Text(
-        stringResource(R.string.apps_version_target, row.versionName ?: "?", row.targetSdk),
-        style = MaterialTheme.typography.bodySmall,
-      )
-      if (floor != null && row.targetSdk < floor) {
+      AppIcon(row.packageName)
+      Column(Modifier.weight(1f)) {
+        Text(row.label, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        Text(row.packageName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
         Text(
-          stringResource(R.string.apps_below_floor, floor),
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.error,
-        )
-      }
-      if (ProprietaryGoogle.classify(row.packageName) != null) {
-        Text(
-          stringResource(R.string.apps_google_namespace),
+          stringResource(R.string.apps_version_target, row.versionName ?: "?", row.targetSdk),
           style = MaterialTheme.typography.bodySmall,
         )
+        if (floor != null && row.targetSdk < floor) {
+          Text(
+            stringResource(R.string.apps_below_floor, floor),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+        if (ProprietaryGoogle.classify(row.packageName) != null) {
+          Text(
+            stringResource(R.string.apps_google_namespace),
+            style = MaterialTheme.typography.bodySmall,
+          )
+        }
       }
     }
   }

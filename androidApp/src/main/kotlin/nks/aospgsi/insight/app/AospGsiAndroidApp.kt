@@ -508,7 +508,7 @@ fun AospGsiAndroidApp() {
   }
 }
 
-private fun formatFileSize(bytes: Long): String =
+internal fun formatFileSize(bytes: Long): String =
   when {
     bytes < 1024 -> "$bytes B"
     bytes < 1024 * 1024 -> "%.1f KB".format(bytes / 1024.0)
@@ -516,7 +516,7 @@ private fun formatFileSize(bytes: Long): String =
   }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+internal fun InfoRow(label: String, value: String) {
   Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
     Text("$label:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(0.38f))
     Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(0.62f))
@@ -572,7 +572,7 @@ private fun mark(value: Boolean?): String =
   }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+internal fun SectionCard(title: String, content: @Composable () -> Unit) {
   Card(modifier = Modifier.fillMaxWidth()) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -616,7 +616,7 @@ private fun ListCard(title: String, items: List<String>, pageSize: Int = PAGE_SI
 private const val PAGE_SIZE = 25
 
 @Composable
-private fun RecognizedLibrariesCard(apk: ApkInspection) {
+internal fun RecognizedLibrariesCard(apk: ApkInspection) {
   val found =
     remember(apk.nativeLibraries) {
       apk.nativeLibraries
@@ -673,7 +673,7 @@ private fun libraryCategoryLabel(category: LibraryCategory): Int =
   }
 
 @Composable
-private fun BuildTagsRow(apk: ApkInspection) {
+internal fun BuildTagsRow(apk: ApkInspection) {
   val tags =
     remember(apk) {
       apk.buildTags + listOfNotNull(LibraryCatalog.detectFramework(apk.nativeLibraries))
@@ -687,7 +687,7 @@ private fun BuildTagsRow(apk: ApkInspection) {
 }
 
 @Composable
-private fun AbiSummaryRows(abis: List<String>) {
+internal fun AbiSummaryRows(abis: List<String>) {
   val support = remember(abis) { AbiRules.support(abis) }
   val label =
     stringResource(
@@ -712,7 +712,7 @@ private fun AbiSummaryRows(abis: List<String>) {
 }
 
 @Composable
-private fun SdkCard(apk: ApkInspection) {
+internal fun SdkCard(apk: ApkInspection) {
   val found =
     remember(apk) {
       val components =
@@ -774,7 +774,7 @@ private fun JsonResourcesCard(files: List<ApkResourceFile>) {
 }
 
 @Composable
-private fun DistributionCard(metaData: Map<String, String>) {
+internal fun DistributionCard(metaData: Map<String, String>) {
   val info = remember(metaData) { DistributionRules.from(metaData) } ?: return
   SectionCard(stringResource(R.string.card_distribution)) {
     if (info.claimsGooglePlay) Text(stringResource(R.string.distribution_play_stamp))
@@ -794,7 +794,7 @@ private fun DistributionCard(metaData: Map<String, String>) {
 }
 
 @Composable
-private fun ApplicationCard(app: ApplicationAttributes?) {
+internal fun ApplicationCard(app: ApplicationAttributes?) {
   if (app == null) return
   SectionCard(stringResource(R.string.card_application)) {
     listOf(

@@ -44,6 +44,8 @@ private data class DetailLabels(
   val normal: String,
   val unknown: String,
   val declared: String,
+  val granted: String,
+  val notGranted: String,
 )
 
 private const val PAGE = 50
@@ -74,7 +76,11 @@ private enum class DetailTab(@StringRes val label: Int) {
  * process, disabled components struck through, and permissions grouped by protection level.
  */
 @Composable
-internal fun DetailTabsCard(apk: ApkInspection) {
+internal fun DetailTabsCard(
+  apk: ApkInspection,
+  /** For an installed app: the permissions it holds. Null for an APK file (nothing is granted). */
+  granted: Set<String>? = null,
+) {
   val context = LocalContext.current
   var selected by rememberSaveable { mutableIntStateOf(0) }
   var sorted by rememberSaveable { mutableStateOf(false) }
@@ -88,9 +94,11 @@ internal fun DetailTabsCard(apk: ApkInspection) {
       normal = stringResource(R.string.perm_group_normal),
       unknown = stringResource(R.string.perm_group_unknown),
       declared = stringResource(R.string.perm_group_declared),
+      granted = stringResource(R.string.perm_group_granted),
+      notGranted = stringResource(R.string.perm_group_not_granted),
     )
   val rowsByTab =
-    remember(apk, labels) {
+    remember(apk, labels, granted) {
       val pm = context.packageManager
       val pkg = apk.packageName.orEmpty()
       DetailTab.entries.associateWith { tab ->
@@ -100,7 +108,7 @@ internal fun DetailTabsCard(apk: ApkInspection) {
           DetailTab.ACTIVITIES -> componentRows(apk.activities, pkg, labels)
           DetailTab.RECEIVERS -> componentRows(apk.receivers, pkg, labels)
           DetailTab.PROVIDERS -> componentRows(apk.providers, pkg, labels)
-          DetailTab.PERMISSIONS -> permissionRows(pm, apk, labels)
+          DetailTab.PERMISSIONS -> permissionRows(pm, apk, labels, granted)
           DetailTab.METADATA ->
             apk.metaData.map { (key, value) -> DetailRow(title = key, subtitle = value) }
         }
@@ -292,6 +300,7 @@ private fun permissionRows(
   pm: PackageManager,
   apk: ApkInspection,
   labels: DetailLabels,
+  granted: Set<String>?,
 ): List<DetailRow> {
   fun label(level: PermissionLevel) =
     when (level) {
@@ -303,8 +312,22 @@ private fun permissionRows(
   val requested =
     apk.requestedPermissions
       .map { it to permissionLevel(pm, it) }
-      .sortedWith(compareBy({ it.second.order }, { it.first }))
-      .map { (name, level) -> DetailRow(title = name, group = label(level)) }
+      .sortedWith(
+        compareBy({ granted != null && it.first in granted }, { it.second.order }, { it.first }),
+      )
+      .map { (name, level) ->
+        val group =
+          when {
+            granted == null -> label(level)
+            name in granted -> labels.granted
+            else -> labels.notGranted
+          }
+        DetailRow(
+          title = name,
+          subtitle = if (granted == null) null else label(level),
+          group = group,
+        )
+      }
   val declared = apk.declaredPermissions.map { DetailRow(title = it, group = labels.declared) }
   return requested + declared
 }

@@ -238,4 +238,13 @@
     <string name="repair_confirm_title">Починить этот APK?</string>
     <string name="repair_confirm_message">Будет собран новый APK, подписанный ключом этого устройства. Выбранный файл не изменяется.</string>
     <string name="repair_failed">Не удалось починить (%1$s): %2$s</string>
+    <string name="perm_group_granted">Выданы</string>
+    <string name="perm_group_not_granted">Не выданы</string>
+    <string name="app_detail_split_note">Нативные библиотеки и ресурсы из split-APK этого приложения не читаются.</string>
+    <string name="app_detail_failed">Не удалось прочитать приложение: %1$s</string>
+    <string name="apps_sort_name">Сортировка: имя А–Я</string>
+    <string name="apps_sort_name_desc">Сортировка: имя Я–А</string>
+    <string name="apps_sort_target_asc">Сортировка: сначала старый target SDK</string>
+    <string name="apps_sort_updated">Сортировка: недавно обновлённые</string>
+    <string name="apps_open_hint">Нажмите на приложение, чтобы изучить его.</string>
 </resources>

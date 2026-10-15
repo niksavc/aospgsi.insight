@@ -238,4 +238,13 @@
     <string name="repair_confirm_title">Repair this APK?</string>
     <string name="repair_confirm_message">A new APK will be built and signed with this device\'s key. The file you picked is not changed.</string>
     <string name="repair_failed">Repair failed (%1$s): %2$s</string>
+    <string name="perm_group_granted">Granted</string>
+    <string name="perm_group_not_granted">Not granted</string>
+    <string name="app_detail_split_note">Native libraries and resources that live in split APKs of this app are not read.</string>
+    <string name="app_detail_failed">Could not read this app: %1$s</string>
+    <string name="apps_sort_name">Sort: name A–Z</string>
+    <string name="apps_sort_name_desc">Sort: name Z–A</string>
+    <string name="apps_sort_target_asc">Sort: oldest target SDK first</string>
+    <string name="apps_sort_updated">Sort: recently updated</string>
+    <string name="apps_open_hint">Tap an app to inspect it.</string>
 </resources>

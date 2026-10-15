@@ -238,6 +238,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           mv debug-apk/*.apk AOSP-GSI-Insight-debug.apk
           sha=$(sha256sum AOSP-GSI-Insight-debug.apk | cut -d' ' -f1)

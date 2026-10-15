@@ -9,7 +9,6 @@ import android.os.IBinder
 import android.util.Log
 import java.io.File
 import nks.aospgsi.insight.core.apktool.Aapt2Provider
-import nks.aospgsi.insight.core.apktool.AndroidKeystoreSigningKey
 import nks.aospgsi.insight.core.apktool.ApkRepairer
 import nks.aospgsi.insight.core.apktool.ApktoolEnvironment
 import nks.aospgsi.insight.core.apktool.ApktoolPatcher
@@ -108,7 +107,7 @@ class PatchService : Service() {
     outDir.mkdirs()
     val output = File(outDir, request.packageName.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".apk")
 
-    val key = AndroidKeystoreSigningKey.getOrCreate()
+    val key = signingKeyManager(this).active()
     val manager = getSystemService(android.app.NotificationManager::class.java)
     var lastPercent = -1
     val report = { progress: nks.aospgsi.insight.core.model.PatchProgress ->

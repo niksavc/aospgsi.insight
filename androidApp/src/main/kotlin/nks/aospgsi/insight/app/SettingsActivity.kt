@@ -81,6 +81,7 @@ private fun SettingsScreen(onBack: () -> Unit) {
           )
         }
       }
+      SigningKeyCard()
     }
   }
 }

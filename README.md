@@ -32,6 +32,15 @@ Open in a recent Android Studio with Kotlin Multiplatform and Compose support, l
 
 For an Android-only first build, use the `androidApp` module's debug build task once the Gradle project is synced.
 
+### Installing CI test builds
+
+The APK from the `AOSP-GSI-Insight-debug-apk` artifact is signed with the debug key in
+`androidApp/debug.keystore` (public, for test builds only; the CI log prints its SHA-256). Builds
+made before this key was added were signed with a random key per run, so the first install of a
+newer build over such a build fails with "App not installed": uninstall the old build once. From
+then on updates install over each other. Uninstalling also deletes the on-device signing key used by
+Fix and Repair, so apps patched earlier can no longer be updated by new patched builds.
+
 ## Security notes
 - Never patch or replace an installed app silently.
 - Never bundle third-party APKs, signing keys, or proprietary Roblox binaries.

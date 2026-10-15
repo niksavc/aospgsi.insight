@@ -115,6 +115,16 @@ jobs:
           "$aapt2" dump badging "$apk" | grep -q "^targetSdkVersion:'37'"
           "$aapt2" dump badging "$apk" | grep -q "compileSdkVersion='37'"
 
+      - name: Show the signer of the debug APK
+        shell: bash
+        run: |
+          apk=$(ls androidApp/build/outputs/apk/debug/*.apk | head -n 1)
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$apksigner" verify --print-certs "$apk" | tee signer.txt
+          # Updates over an installed build only work while this digest stays the same.
+          grep -q "certificate DN: CN=AOSP GSI Insight Debug, O=niksavc, C=RU" signer.txt
+          echo "::notice title=debug signer::$(grep 'SHA-256' signer.txt | head -n 1)"
+
       - name: Verify aapt2 is packaged for every ABI
         shell: bash
         run: |

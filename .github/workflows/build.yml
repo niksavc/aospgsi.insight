@@ -217,3 +217,37 @@ jobs:
             msg=$(tail -n 60 device-test.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::notice title=device test API ${{ matrix.api }}::$msg"
           fi
+
+  # The artifact download is a zip, and some phone file managers fail to unpack it or leave a
+  # truncated APK behind ("App not installed"). A release asset is the bare .apk.
+  publish:
+    name: Publish the APK as a release asset
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the debug APK
+        uses: actions/download-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-debug-apk
+          path: debug-apk
+
+      - name: Update the ci-latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv debug-apk/*.apk AOSP-GSI-Insight-debug.apk
+          sha=$(sha256sum AOSP-GSI-Insight-debug.apk | cut -d' ' -f1)
+          size=$(stat -c %s AOSP-GSI-Insight-debug.apk)
+          notes="Debug build for testing. Commit ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}. Size $size bytes, SHA-256 $sha. Signed with the public debug key, never for release."
+          if gh release view ci-latest >/dev/null 2>&1; then
+            gh release edit ci-latest --prerelease --notes "$notes"
+          else
+            gh release create ci-latest --prerelease --target "$GITHUB_SHA" \
+              --title "Latest CI build" --notes "$notes"
+          fi
+          gh release upload ci-latest AOSP-GSI-Insight-debug.apk --clobber
+          echo "::notice title=release asset::AOSP-GSI-Insight-debug.apk, $size bytes, sha256 $sha"

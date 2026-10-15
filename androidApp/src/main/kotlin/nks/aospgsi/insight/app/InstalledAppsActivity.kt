@@ -116,20 +116,18 @@ private fun InstalledAppsScreen(onBack: () -> Unit) {
     rows =
       withContext(Dispatchers.IO) {
         val pm = context.packageManager
-        pm
-          .getInstalledPackages(0)
-          .mapNotNull { info ->
-            val app = info.applicationInfo ?: return@mapNotNull null
-            InstalledRow(
-              label = app.loadLabel(pm).toString(),
-              packageName = info.packageName,
-              versionName = info.versionName,
-              targetSdk = app.targetSdkVersion,
-              system = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-              category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
-              updatedAt = info.lastUpdateTime,
-            )
-          }
+        pm.getInstalledPackages(0).mapNotNull { info ->
+          val app = info.applicationInfo ?: return@mapNotNull null
+          InstalledRow(
+            label = app.loadLabel(pm).toString(),
+            packageName = info.packageName,
+            versionName = info.versionName,
+            targetSdk = app.targetSdkVersion,
+            system = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+            category = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) app.category else -1,
+            updatedAt = info.lastUpdateTime,
+          )
+        }
       }
   }
 

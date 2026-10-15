@@ -96,8 +96,7 @@ private fun AppDetailScreen(packageName: String?, onBack: () -> Unit) {
         }
       }
   }
-  val title =
-    (state as? DetailsState.Ready)?.details?.inspection?.appLabel ?: packageName.orEmpty()
+  val title = (state as? DetailsState.Ready)?.details?.inspection?.appLabel ?: packageName.orEmpty()
   ScreenFrame(title, onBack) { padding ->
     ScrollingPage(padding) {
       when (val current = state) {

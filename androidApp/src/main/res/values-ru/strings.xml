@@ -278,4 +278,9 @@
     <string name="key_err_mismatch">Сертификат в файле не соответствует закрытому ключу.</string>
     <string name="key_err_not_exportable">Экспортировать можно только экспортируемый ключ.</string>
     <string name="key_err_other">Ошибка: %1$s</string>
+    <string name="activities_open_hint">Нажмите на активность, чтобы открыть её. Долгое нажатие на любую строку копирует имя. Без root Android открывает только экспортируемые активности, остальные отклоняет.</string>
+    <string name="activity_open_denied">Android отказал: активность не экспортируется или требует разрешения.</string>
+    <string name="activity_open_not_found">Активность не найдена. Возможно, она отключена.</string>
+    <string name="activity_open_failed">Не удалось открыть активность.</string>
+    <string name="copied">Скопировано</string>
 </resources>

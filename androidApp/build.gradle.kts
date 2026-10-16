@@ -19,7 +19,8 @@ android {
     applicationId = "nks.aospgsi.insight"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
-    versionCode = 1
+    // CI passes an increasing number for release builds; local builds stay at 1.
+    versionCode = System.getenv("AOSPGSI_VERSION_CODE")?.toIntOrNull() ?: 1
     versionName = "0.1.0"
   }
 
@@ -32,6 +33,29 @@ android {
       storePassword = "android"
       keyAlias = "aospgsi-debug"
       keyPassword = "android"
+    }
+
+    // The release key never lives in the repository: CI hands it over through the environment
+    // (see the "release" input of .github/workflows/build.yml). Without it the release APK stays
+    // unsigned, which Android will not install.
+    val releaseKeystore = System.getenv("AOSPGSI_RELEASE_KEYSTORE")
+    if (releaseKeystore != null) {
+      create("release") {
+        storeFile = file(releaseKeystore)
+        storeType = "pkcs12"
+        storePassword = System.getenv("AOSPGSI_RELEASE_PASSWORD")
+        keyAlias = System.getenv("AOSPGSI_RELEASE_ALIAS")
+        keyPassword = System.getenv("AOSPGSI_RELEASE_PASSWORD")
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      signingConfig = signingConfigs.findByName("release")
+      // Not shrunk yet: Apktool, apksig and the catalogs reflect over classes and resources, so
+      // R8 rules have to be written and tested on a device before this is turned on.
+      isMinifyEnabled = false
     }
   }
 

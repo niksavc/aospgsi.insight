@@ -15,6 +15,10 @@ on:
         description: 'Also run the whole Fix flow on emulators (Android 7 and 14)'
         type: boolean
         default: false
+      release:
+        description: 'Also build a signed release APK and publish it as a pre-release'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -145,11 +149,95 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Prepare the release signing key
+        if: inputs.release == true
+        shell: bash
+        env:
+          SECRET_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          SECRET_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          SECRET_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        run: |
+          mkdir -p release-key
+          if [ -n "$SECRET_KEYSTORE" ] && [ -n "$SECRET_PASSWORD" ]; then
+            echo "$SECRET_KEYSTORE" | base64 -d > release-key/release.p12
+            alias="${SECRET_ALIAS:-aospgsi-release}"
+            password="$SECRET_PASSWORD"
+            echo "::notice title=release key::Using the key from the repository secrets."
+          else
+            # No secrets yet: make a key now. It is saved as a private artifact so that it can be put
+            # into the secrets, because every later release has to be signed with the same key.
+            alias=aospgsi-release
+            password=$(openssl rand -hex 24)
+            echo "::add-mask::$password"
+            keytool -genkeypair -keystore release-key/release.p12 -storetype PKCS12 \
+              -alias "$alias" -keyalg RSA -keysize 4096 -validity 10950 \
+              -storepass "$password" -keypass "$password" \
+              -dname "CN=AOSP GSI Insight, O=niksavc, C=RU"
+            mkdir -p new-key
+            cp release-key/release.p12 new-key/aospgsi-release.p12
+            {
+              echo "RELEASE_KEYSTORE_BASE64 = contents of aospgsi-release.p12.base64.txt"
+              echo "RELEASE_KEY_PASSWORD    = $password"
+              echo "RELEASE_KEY_ALIAS       = $alias"
+            } > new-key/secrets.txt
+            base64 -w0 release-key/release.p12 > new-key/aospgsi-release.p12.base64.txt
+            echo "NEW_RELEASE_KEY=1" >> "$GITHUB_ENV"
+            echo "::warning title=new release key::No release key was set, so a new one was created. Save it from the AOSP-GSI-Insight-release-keystore artifact into the repository secrets and delete the artifact."
+          fi
+          echo "AOSPGSI_RELEASE_KEYSTORE=$PWD/release-key/release.p12" >> "$GITHUB_ENV"
+          echo "AOSPGSI_RELEASE_ALIAS=$alias" >> "$GITHUB_ENV"
+          echo "AOSPGSI_RELEASE_PASSWORD=$password" >> "$GITHUB_ENV"
+          echo "AOSPGSI_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Upload the new release key
+        if: inputs.release == true && env.NEW_RELEASE_KEY == '1'
+        uses: actions/upload-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-release-keystore
+          path: new-key
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Build Release APK
+        if: inputs.release == true
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle :androidApp:assembleRelease --no-daemon --stacktrace 2>&1 | tee release.log
+
+      - name: Verify the release APK
+        if: inputs.release == true
+        shell: bash
+        run: |
+          apk=$(ls androidApp/build/outputs/apk/release/*.apk | head -n 1)
+          case "$apk" in *unsigned*) echo "release APK is unsigned"; exit 1;; esac
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          aapt2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)
+          "$apksigner" verify --verbose --print-certs "$apk" | tee release-signer.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" release-signer.txt
+          if grep -q "AOSP GSI Insight Debug" release-signer.txt; then echo "signed with the debug key"; exit 1; fi
+          "$aapt2" dump badging "$apk" | grep -E "^package:|^sdkVersion|^targetSdkVersion"
+          if "$aapt2" dump badging "$apk" | grep -q "application-debuggable"; then echo "release APK is debuggable"; exit 1; fi
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            unzip -l "$apk" | grep -q "lib/$abi/libaapt2.so" || { echo "missing lib/$abi/libaapt2.so"; exit 1; }
+          done
+          "$aapt2" dump xmltree "$apk" --file AndroidManifest.xml | grep -q "extractNativeLibs.*=true"
+          echo "::notice title=release signer::$(grep 'SHA-256' release-signer.txt | head -n 1)"
+
+      - name: Upload Release APK
+        if: inputs.release == true
+        uses: actions/upload-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-release-apk
+          path: androidApp/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Report failure details as annotations
         if: failure()
         shell: bash
         run: |
-          for f in lint.log test.log build.log; do
+          for f in lint.log test.log build.log release.log; do
             if [ -f "$f" ]; then
               msg=$( { grep -E -A30 "What went wrong" "$f"; grep -E "^e: |Caused by|Duplicate class|defined multiple|min-api|not supported|Learn how|^w: .*error|FAILED|Execution failed|Could not (resolve|find|determine)" "$f"; } | grep -v "^\s*at " | head -n 45 | cut -c1-500 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
               echo "::error title=$f::$msg"
@@ -217,3 +305,67 @@ jobs:
             msg=$(tail -n 60 device-test.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::notice title=device test API ${{ matrix.api }}::$msg"
           fi
+
+  # The artifact download is a zip, and some phone file managers fail to unpack it or leave a
+  # truncated APK behind ("App not installed"). A release asset is the bare .apk.
+  publish:
+    name: Publish the APK as a release asset
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the debug APK
+        uses: actions/download-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-debug-apk
+          path: debug-apk
+
+      - name: Update the ci-latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mv debug-apk/*.apk AOSP-GSI-Insight-debug.apk
+          sha=$(sha256sum AOSP-GSI-Insight-debug.apk | cut -d' ' -f1)
+          size=$(stat -c %s AOSP-GSI-Insight-debug.apk)
+          notes="Debug build for testing. Commit ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}. Size $size bytes, SHA-256 $sha. Signed with the public debug key, never for release."
+          if gh release view ci-latest >/dev/null 2>&1; then
+            gh release edit ci-latest --prerelease --notes "$notes"
+          else
+            gh release create ci-latest --prerelease --target "$GITHUB_SHA" \
+              --title "Latest CI build" --notes "$notes"
+          fi
+          gh release upload ci-latest AOSP-GSI-Insight-debug.apk --clobber
+          echo "::notice title=release asset::AOSP-GSI-Insight-debug.apk, $size bytes, sha256 $sha"
+
+  publish-release:
+    name: Publish the release APK
+    needs: build
+    if: inputs.release == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the release APK
+        uses: actions/download-artifact@v6
+        with:
+          name: AOSP-GSI-Insight-release-apk
+          path: release-apk
+
+      - name: Create the pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag="v0.1.0-rc.${{ github.run_number }}"
+          mv release-apk/*.apk "AOSP-GSI-Insight-$tag.apk"
+          sha=$(sha256sum "AOSP-GSI-Insight-$tag.apk" | cut -d' ' -f1)
+          gh release create "$tag" --prerelease --target "$GITHUB_SHA" \
+            --title "AOSP GSI Insight $tag" \
+            --notes "Release build, commit ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}. SHA-256 $sha. Not minified yet." \
+            "AOSP-GSI-Insight-$tag.apk"
+          echo "::notice title=release::$tag, sha256 $sha"

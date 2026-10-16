@@ -1,8 +1,14 @@
 package nks.aospgsi.insight.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.PermissionInfo
+import android.os.Build
+import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -82,6 +88,8 @@ internal fun DetailTabsCard(
   granted: Set<String>? = null,
 ) {
   val context = LocalContext.current
+  // Components can only be opened for an installed app.
+  val packageToOpen = if (granted != null) apk.packageName else null
   var selected by rememberSaveable { mutableIntStateOf(0) }
   var sorted by rememberSaveable { mutableStateOf(false) }
   var shown by rememberSaveable(selected, sorted) { mutableIntStateOf(PAGE) }
@@ -156,6 +164,12 @@ internal fun DetailTabsCard(
           style = MaterialTheme.typography.bodySmall,
         )
       }
+      if (tab == DetailTab.ACTIVITIES && packageToOpen != null) {
+        Text(
+          stringResource(R.string.activities_open_hint),
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
       if (rows.isEmpty()) Text(stringResource(R.string.none_found))
 
       var lastGroup: String? = null
@@ -169,7 +183,13 @@ internal fun DetailTabsCard(
           )
         }
         lastGroup = row.group
-        DetailRowView(row)
+        val open =
+          if (tab == DetailTab.ACTIVITIES && packageToOpen != null) {
+            { openActivity(context, packageToOpen, row.title) }
+          } else {
+            null
+          }
+        DetailRowView(row, onClick = open, onLongClick = { copyToClipboard(context, row.title) })
       }
       val left = ordered.size - shown
       if (left > 0) {
@@ -188,21 +208,47 @@ internal fun DetailTabsCard(
 }
 
 @Composable
-private fun DetailRowView(row: DetailRow) {
+private fun DetailRowView(row: DetailRow, onClick: (() -> Unit)?, onLongClick: () -> Unit) {
   Row(
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.spacedBy(8.dp),
-    modifier = Modifier.fillMaxWidth(),
+    modifier =
+      Modifier.fillMaxWidth()
+        .combinedClickable(onClick = onClick ?: {}, onLongClick = onLongClick)
+        .padding(vertical = 4.dp),
   ) {
     Column(Modifier.weight(1f)) {
       Text(
         row.title,
         style = MaterialTheme.typography.bodyMedium,
         textDecoration = if (row.struck) TextDecoration.LineThrough else null,
+        color =
+          if (onClick != null) MaterialTheme.colorScheme.primary
+          else MaterialTheme.colorScheme.onSurface,
       )
       row.subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
     row.badge?.let { Badge(it) }
+  }
+}
+
+private fun openActivity(context: Context, packageName: String, className: String) {
+  val message =
+    when (launchActivity(context, packageName, className)) {
+      LaunchResult.STARTED -> return
+      LaunchResult.DENIED -> R.string.activity_open_denied
+      LaunchResult.NOT_FOUND -> R.string.activity_open_not_found
+      LaunchResult.FAILED -> R.string.activity_open_failed
+    }
+  Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+  val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
+  clipboard.setPrimaryClip(ClipData.newPlainText(text, text))
+  // Android 13 and later show their own confirmation.
+  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
   }
 }
 

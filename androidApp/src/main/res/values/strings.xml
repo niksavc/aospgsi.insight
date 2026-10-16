@@ -278,4 +278,9 @@
     <string name="key_err_mismatch">The certificate in the file does not belong to its private key.</string>
     <string name="key_err_not_exportable">Only an exportable key can be exported.</string>
     <string name="key_err_other">Failed: %1$s</string>
+    <string name="activities_open_hint">Tap an activity to open it. Long-press any row to copy its name. Without root, Android only opens activities the app exports; the rest are refused.</string>
+    <string name="activity_open_denied">Android refused: the activity is not exported or needs a permission.</string>
+    <string name="activity_open_not_found">The activity was not found. It may be disabled.</string>
+    <string name="activity_open_failed">The activity could not be opened.</string>
+    <string name="copied">Copied</string>
 </resources>

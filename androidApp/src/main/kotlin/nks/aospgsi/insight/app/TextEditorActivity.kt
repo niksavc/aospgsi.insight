@@ -571,12 +571,13 @@ private fun EditorBody(value: TextFieldValue, wrap: Boolean, onChange: (TextFiel
           Modifier.background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 6.dp),
       )
     }
+    // Without wrapping the field sits in a horizontal scroll, which gives it unbounded width, so
+    // long lines stay on one line.
     BasicTextField(
       value = value,
       onValueChange = onChange,
       textStyle = EditorTextStyle.copy(color = color),
       cursorBrush = SolidColor(color),
-      softWrap = wrap,
       modifier =
         Modifier.weight(1f)
           .then(if (wrap) Modifier else Modifier.horizontalScroll(rememberScrollState()))

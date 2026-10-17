@@ -316,4 +316,5 @@
     <string name="editor_err_binary">This looks like a binary file, not text.</string>
     <string name="editor_err_not_utf8">The file is not UTF-8 text. Saving it here would change bytes the editor cannot show, so it is not opened.</string>
     <string name="editor_err_too_large">The file is larger than %1$d MB. The editor does not open files that big.</string>
+    <string name="menu_open">Open menu</string>
 </resources>

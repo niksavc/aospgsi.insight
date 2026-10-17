@@ -87,6 +87,7 @@ dependencies {
   implementation(project(":core:monetization"))
   implementation(project(":core:patch-api"))
   implementation(project(":core:patch-engine-apktool"))
+  implementation(project(":core:text-editor"))
   implementation(project(":integrations:backend-api"))
   coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
   implementation(libs.androidx.activity.compose)

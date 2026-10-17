@@ -27,6 +27,7 @@ include(
   ":core:apk-model",
   ":core:patch-api",
   ":core:apk-inspector",
+  ":core:text-editor",
   ":core:patch-engine-apktool",
   ":core:verification",
   ":core:installer",

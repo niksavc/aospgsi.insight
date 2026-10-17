@@ -25,6 +25,21 @@
         <activity android:name=".InstalledAppsActivity" android:exported="false" />
         <activity android:name=".AppDetailActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <!-- Edits survive rotation and window resizing: the activity is not recreated. -->
+        <activity
+            android:name=".TextEditorActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|density|fontScale"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/*" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/xml" />
+            </intent-filter>
+        </activity>
         <activity android:name=".AboutActivity" android:exported="false" />
 
         <service

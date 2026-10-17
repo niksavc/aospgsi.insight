@@ -239,6 +239,9 @@ jobs:
         run: |
           for f in lint.log test.log build.log release.log; do
             if [ -f "$f" ]; then
+              # Kotlin compiler errors name a source file and position.
+              kt=$(grep -E "(androidApp|composeApp|core|integrations)/.*\.kt:[0-9]+" "$f" | grep -vE "^w: |warning|^\s+at " | head -n 25 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
+              if [ -n "$kt" ]; then echo "::error title=$f compile errors::$kt"; fi
               msg=$( { grep -E -A30 "What went wrong" "$f"; grep -E "^e: |Caused by|Duplicate class|defined multiple|min-api|not supported|Learn how|^w: .*error|FAILED|Execution failed|Could not (resolve|find|determine)" "$f"; } | grep -v "^\s*at " | head -n 45 | cut -c1-500 | sed ':a;N;$!ba;s/\n/%0A/g' || true)
               echo "::error title=$f::$msg"
             fi

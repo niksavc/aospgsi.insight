@@ -316,4 +316,5 @@
     <string name="editor_err_binary">Похоже на двоичный файл, а не на текст.</string>
     <string name="editor_err_not_utf8">Файл не в кодировке UTF-8. При сохранении здесь изменились бы байты, которые редактор не показывает, поэтому файл не открыт.</string>
     <string name="editor_err_too_large">Файл больше %1$d МБ. Такие большие файлы редактор не открывает.</string>
+    <string name="menu_open">Открыть меню</string>
 </resources>

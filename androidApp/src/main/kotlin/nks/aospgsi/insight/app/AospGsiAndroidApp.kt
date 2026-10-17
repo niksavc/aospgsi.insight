@@ -11,21 +11,27 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -167,6 +173,7 @@ private fun stageSource(
   )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AospGsiAndroidApp() {
   val context = LocalContext.current
@@ -252,19 +259,17 @@ fun AospGsiAndroidApp() {
   }
 
   AppTheme {
-    Surface(modifier = Modifier.fillMaxSize()) {
-      Column(
-        modifier =
-          Modifier.fillMaxSize()
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        Text("AOSP GSI Insight", style = MaterialTheme.typography.headlineLarge)
-        Text(stringResource(R.string.inspector_title), style = MaterialTheme.typography.titleLarge)
-        Text(stringResource(R.string.inspector_subtitle))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
+    ModalNavigationDrawer(
+      drawerState = drawerState,
+      drawerContent = {
+        ModalDrawerSheet {
+          Text(
+            "AOSP GSI Insight",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+          )
           listOf(
               R.string.nav_apps to InstalledAppsActivity::class.java,
               R.string.nav_editor to TextEditorActivity::class.java,
@@ -272,238 +277,266 @@ fun AospGsiAndroidApp() {
               R.string.nav_about to AboutActivity::class.java,
             )
             .forEach { (label, target) ->
-              OutlinedButton(
-                onClick = { context.startActivity(Intent(context, target)) },
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-              ) {
-                Text(stringResource(label), maxLines = 1)
-              }
-            }
-        }
-        Button(
-          onClick = {
-            picker.launch(
-              arrayOf(
-                "application/vnd.android.package-archive",
-                "application/zip",
-                "application/octet-stream",
-              ),
-            )
-          },
-          enabled = !busy,
-        ) {
-          Text(stringResource(if (busy) R.string.analyzing_button else R.string.pick_apk))
-        }
-        val statusText =
-          when (val s = status) {
-            AnalysisStatus.Idle -> stringResource(R.string.status_idle)
-            AnalysisStatus.Analyzing -> stringResource(R.string.status_analyzing)
-            AnalysisStatus.Done -> stringResource(R.string.status_done)
-            is AnalysisStatus.Failed ->
-              stringResource(
-                R.string.status_failed,
-                s.message ?: stringResource(R.string.error_unknown),
-              )
-          }
-        Text(statusText, style = MaterialTheme.typography.bodyMedium)
-
-        result?.let { apk ->
-          Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
-              verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-              Text(
-                stringResource(R.string.card_app_info),
-                style = MaterialTheme.typography.titleLarge,
-              )
-              InfoRow(stringResource(R.string.label_file), apk.fileName ?: unknown)
-              InfoRow(
-                stringResource(R.string.label_size),
-                apk.fileSizeBytes?.let(::formatFileSize) ?: unknown,
-              )
-              InfoRow(stringResource(R.string.label_sha256), apk.sha256 ?: unknown)
-              InfoRow(stringResource(R.string.label_name), apk.appLabel ?: unknown)
-              InfoRow(stringResource(R.string.label_package), apk.packageName ?: unknown)
-              InfoRow(stringResource(R.string.label_version), apk.versionName ?: unknown)
-              InfoRow(
-                stringResource(R.string.label_version_code),
-                apk.versionCode?.toString() ?: unknown,
-              )
-              InfoRow(stringResource(R.string.label_min_sdk), apk.minSdk?.toString() ?: unknown)
-              InfoRow(
-                stringResource(R.string.label_target_sdk),
-                apk.targetSdk?.toString() ?: unknown,
-              )
-              InfoRow(
-                stringResource(R.string.label_abi),
-                apk.nativeAbis.joinToString().ifEmpty { "—" },
-              )
-              AbiSummaryRows(apk.nativeAbis)
-              BuildTagsRow(apk)
-              apk.multiArch?.let {
-                InfoRow(
-                  stringResource(R.string.label_multiarch),
-                  stringResource(if (it) R.string.value_yes else R.string.value_no),
-                )
-              }
-              if (apk.isBundle) {
-                Text(
-                  stringResource(R.string.bundle_note, apk.bundleApks.size),
-                  color = MaterialTheme.colorScheme.primary,
-                )
-              }
-              if (apk.isLegacyRobloxInspectionTarget) {
-                Text(
-                  stringResource(R.string.roblox_detected),
-                  color = MaterialTheme.colorScheme.primary,
-                )
-              }
-              // Warnings come from the core module and are currently English-only.
-              apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
-            }
-          }
-
-          if (patchedNote) {
-            Text(
-              stringResource(R.string.patched_note),
-              color = MaterialTheme.colorScheme.primary,
-            )
-          }
-
-          assessment?.let { check ->
-            SectionCard(stringResource(R.string.card_install_check)) {
-              if (check.issues.isEmpty()) Text(stringResource(R.string.install_no_issues))
-              check.issues.forEach { issue ->
-                val icon = if (issue.blocking) "⛔" else "⚠"
-                Text("$icon ${issueText(issue)}", style = MaterialTheme.typography.bodyMedium)
-              }
-              val uri = pickedUri
-              val installBusy = installUi is InstallUi.Preparing || installUi is InstallUi.Waiting
-              Button(
+              NavigationDrawerItem(
+                label = { Text(stringResource(label)) },
+                selected = false,
                 onClick = {
-                  val sha = apk.sha256
-                  if (uri != null && sha != null) {
-                    installUi = InstallUi.Preparing
-                    scope.launch {
-                      installUi =
-                        try {
-                          withContext(Dispatchers.IO) {
-                            PackageInstallerClient(context)
-                              .install(uri, sha, apk.packageName, apk.bundleApks)
-                          }
-                          InstallUi.Waiting
-                        } catch (e: Exception) {
-                          InstallUi.Failed(e.message)
-                        }
-                    }
-                  }
+                  drawerScope.launch { drawerState.close() }
+                  context.startActivity(Intent(context, target))
                 },
-                enabled = check.canInstall && !installBusy && apk.sha256 != null,
-              ) {
-                Text(stringResource(R.string.install_button))
-              }
-              Text(installStatusText(installUi), style = MaterialTheme.typography.bodyMedium)
-            }
-          }
-
-          ProprietaryCard(apk.packageName)
-
-          val deviceInfo = device
-          val check = assessment
-          if (deviceInfo != null && check != null) {
-            val plan =
-              FixPlanner.plan(
-                apk,
-                InstallPolicy.minimumInstallableTargetSdk(deviceInfo.sdk),
-                cloneChoice,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
               )
-            val startPatch: (FixPlan.Ready?) -> Unit = { ready ->
-              val uri = pickedUri
-              val packageName = apk.packageName
-              if (uri != null && packageName != null) {
-                repairRun = ready == null
-                PatchEvents.state.value =
-                  PatchState.Running(0, if (ready == null) "align" else "decode")
-                scope.launch {
-                  try {
-                    val request =
-                      withContext(Dispatchers.IO) {
-                        stageSource(context, uri, apk.sha256, packageName, ready)
+            }
+        }
+      },
+    ) {
+      Scaffold(
+        topBar = {
+          TopAppBar(
+            title = { Text("AOSP GSI Insight") },
+            navigationIcon = {
+              HamburgerButton(onClick = { drawerScope.launch { drawerState.open() } })
+            },
+          )
+        },
+      ) { scaffoldPadding ->
+        Column(
+          modifier =
+            Modifier.fillMaxSize()
+              .padding(scaffoldPadding)
+              .verticalScroll(rememberScrollState())
+              .padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+          Text(
+            stringResource(R.string.inspector_title),
+            style = MaterialTheme.typography.titleLarge,
+          )
+          Text(stringResource(R.string.inspector_subtitle))
+          Button(
+            onClick = {
+              picker.launch(
+                arrayOf(
+                  "application/vnd.android.package-archive",
+                  "application/zip",
+                  "application/octet-stream",
+                ),
+              )
+            },
+            enabled = !busy,
+          ) {
+            Text(stringResource(if (busy) R.string.analyzing_button else R.string.pick_apk))
+          }
+          val statusText =
+            when (val s = status) {
+              AnalysisStatus.Idle -> stringResource(R.string.status_idle)
+              AnalysisStatus.Analyzing -> stringResource(R.string.status_analyzing)
+              AnalysisStatus.Done -> stringResource(R.string.status_done)
+              is AnalysisStatus.Failed ->
+                stringResource(
+                  R.string.status_failed,
+                  s.message ?: stringResource(R.string.error_unknown),
+                )
+            }
+          Text(statusText, style = MaterialTheme.typography.bodyMedium)
+
+          result?.let { apk ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+              Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+              ) {
+                Text(
+                  stringResource(R.string.card_app_info),
+                  style = MaterialTheme.typography.titleLarge,
+                )
+                InfoRow(stringResource(R.string.label_file), apk.fileName ?: unknown)
+                InfoRow(
+                  stringResource(R.string.label_size),
+                  apk.fileSizeBytes?.let(::formatFileSize) ?: unknown,
+                )
+                InfoRow(stringResource(R.string.label_sha256), apk.sha256 ?: unknown)
+                InfoRow(stringResource(R.string.label_name), apk.appLabel ?: unknown)
+                InfoRow(stringResource(R.string.label_package), apk.packageName ?: unknown)
+                InfoRow(stringResource(R.string.label_version), apk.versionName ?: unknown)
+                InfoRow(
+                  stringResource(R.string.label_version_code),
+                  apk.versionCode?.toString() ?: unknown,
+                )
+                InfoRow(stringResource(R.string.label_min_sdk), apk.minSdk?.toString() ?: unknown)
+                InfoRow(
+                  stringResource(R.string.label_target_sdk),
+                  apk.targetSdk?.toString() ?: unknown,
+                )
+                InfoRow(
+                  stringResource(R.string.label_abi),
+                  apk.nativeAbis.joinToString().ifEmpty { "—" },
+                )
+                AbiSummaryRows(apk.nativeAbis)
+                BuildTagsRow(apk)
+                apk.multiArch?.let {
+                  InfoRow(
+                    stringResource(R.string.label_multiarch),
+                    stringResource(if (it) R.string.value_yes else R.string.value_no),
+                  )
+                }
+                if (apk.isBundle) {
+                  Text(
+                    stringResource(R.string.bundle_note, apk.bundleApks.size),
+                    color = MaterialTheme.colorScheme.primary,
+                  )
+                }
+                if (apk.isLegacyRobloxInspectionTarget) {
+                  Text(
+                    stringResource(R.string.roblox_detected),
+                    color = MaterialTheme.colorScheme.primary,
+                  )
+                }
+                // Warnings come from the core module and are currently English-only.
+                apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
+              }
+            }
+
+            if (patchedNote) {
+              Text(
+                stringResource(R.string.patched_note),
+                color = MaterialTheme.colorScheme.primary,
+              )
+            }
+
+            assessment?.let { check ->
+              SectionCard(stringResource(R.string.card_install_check)) {
+                if (check.issues.isEmpty()) Text(stringResource(R.string.install_no_issues))
+                check.issues.forEach { issue ->
+                  val icon = if (issue.blocking) "⛔" else "⚠"
+                  Text("$icon ${issueText(issue)}", style = MaterialTheme.typography.bodyMedium)
+                }
+                val uri = pickedUri
+                val installBusy = installUi is InstallUi.Preparing || installUi is InstallUi.Waiting
+                Button(
+                  onClick = {
+                    val sha = apk.sha256
+                    if (uri != null && sha != null) {
+                      installUi = InstallUi.Preparing
+                      scope.launch {
+                        installUi =
+                          try {
+                            withContext(Dispatchers.IO) {
+                              PackageInstallerClient(context)
+                                .install(uri, sha, apk.packageName, apk.bundleApks)
+                            }
+                            InstallUi.Waiting
+                          } catch (e: Exception) {
+                            InstallUi.Failed(e.message)
+                          }
                       }
-                    val needsPermission =
-                      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                          PackageManager.PERMISSION_GRANTED
-                    if (needsPermission) {
-                      pendingRequest = request
-                      notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    } else {
-                      PatchService.start(context, request)
                     }
-                  } catch (e: Exception) {
-                    PatchEvents.state.value = PatchState.Failed("prepare", e.message)
+                  },
+                  enabled = check.canInstall && !installBusy && apk.sha256 != null,
+                ) {
+                  Text(stringResource(R.string.install_button))
+                }
+                Text(installStatusText(installUi), style = MaterialTheme.typography.bodyMedium)
+              }
+            }
+
+            ProprietaryCard(apk.packageName)
+
+            val deviceInfo = device
+            val check = assessment
+            if (deviceInfo != null && check != null) {
+              val plan =
+                FixPlanner.plan(
+                  apk,
+                  InstallPolicy.minimumInstallableTargetSdk(deviceInfo.sdk),
+                  cloneChoice,
+                )
+              val startPatch: (FixPlan.Ready?) -> Unit = { ready ->
+                val uri = pickedUri
+                val packageName = apk.packageName
+                if (uri != null && packageName != null) {
+                  repairRun = ready == null
+                  PatchEvents.state.value =
+                    PatchState.Running(0, if (ready == null) "align" else "decode")
+                  scope.launch {
+                    try {
+                      val request =
+                        withContext(Dispatchers.IO) {
+                          stageSource(context, uri, apk.sha256, packageName, ready)
+                        }
+                      val needsPermission =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                          context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                            PackageManager.PERMISSION_GRANTED
+                      if (needsPermission) {
+                        pendingRequest = request
+                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                      } else {
+                        PatchService.start(context, request)
+                      }
+                    } catch (e: Exception) {
+                      PatchEvents.state.value = PatchState.Failed("prepare", e.message)
+                    }
                   }
                 }
               }
+              FixCard(
+                apk = apk,
+                assessment = check,
+                installed = installedApp,
+                plan = plan,
+                cloneAlongside = cloneChoice,
+                onCloneChange = { cloneChoice = it },
+                patchState = if (repairRun) PatchState.Idle else patchState,
+                aapt2Ready = Aapt2Provider.find(context) != null,
+                otherJobRunning = repairRun && patchState is PatchState.Running,
+                onFix = { startPatch(it) },
+              )
+              RepairCard(
+                apk = apk,
+                patchState = if (repairRun) patchState else PatchState.Idle,
+                anyRunning = patchState is PatchState.Running,
+                onRepair = { startPatch(null) },
+              )
             }
-            FixCard(
-              apk = apk,
-              assessment = check,
-              installed = installedApp,
-              plan = plan,
-              cloneAlongside = cloneChoice,
-              onCloneChange = { cloneChoice = it },
-              patchState = if (repairRun) PatchState.Idle else patchState,
-              aapt2Ready = Aapt2Provider.find(context) != null,
-              otherJobRunning = repairRun && patchState is PatchState.Running,
-              onFix = { startPatch(it) },
-            )
-            RepairCard(
-              apk = apk,
-              patchState = if (repairRun) patchState else PatchState.Idle,
-              anyRunning = patchState is PatchState.Running,
-              onRepair = { startPatch(null) },
-            )
-          }
 
-          SectionCard(stringResource(R.string.card_signatures)) {
-            when (apk.signatureVerified) {
-              true -> Text(stringResource(R.string.sig_verified_yes))
-              else -> Text(stringResource(R.string.sig_verified_no))
+            SectionCard(stringResource(R.string.card_signatures)) {
+              when (apk.signatureVerified) {
+                true -> Text(stringResource(R.string.sig_verified_yes))
+                else -> Text(stringResource(R.string.sig_verified_no))
+              }
+              if (apk.signatureSchemes.isNotEmpty()) {
+                Text(stringResource(R.string.sig_schemes, apk.signatureSchemes.joinToString()))
+              }
+              if (apk.signerSha256.isEmpty()) Text(stringResource(R.string.sig_none))
+              apk.signerSha256.forEach {
+                Text("• SHA-256: $it", style = MaterialTheme.typography.bodySmall)
+              }
             }
-            if (apk.signatureSchemes.isNotEmpty()) {
-              Text(stringResource(R.string.sig_schemes, apk.signatureSchemes.joinToString()))
+
+            SectionCard(stringResource(R.string.card_16kb)) {
+              when (apk.sixteenKbReady) {
+                true -> Text(stringResource(R.string.kb16_ready))
+                false -> Text(stringResource(R.string.kb16_not_ready))
+                null -> Text(stringResource(R.string.kb16_no_64bit))
+              }
             }
-            if (apk.signerSha256.isEmpty()) Text(stringResource(R.string.sig_none))
-            apk.signerSha256.forEach {
-              Text("• SHA-256: $it", style = MaterialTheme.typography.bodySmall)
+
+            ApplicationCard(apk.application)
+            DistributionCard(apk.metaData)
+            RecognizedLibrariesCard(apk)
+            SdkCard(apk)
+            JsonResourcesCard(apk.jsonResources)
+            DetailTabsCard(apk)
+
+            if (apk.isBundle) {
+              ListCard(stringResource(R.string.card_splits, apk.bundleApks.size), apk.bundleApks)
             }
           }
+          SupportCard()
 
-          SectionCard(stringResource(R.string.card_16kb)) {
-            when (apk.sixteenKbReady) {
-              true -> Text(stringResource(R.string.kb16_ready))
-              false -> Text(stringResource(R.string.kb16_not_ready))
-              null -> Text(stringResource(R.string.kb16_no_64bit))
-            }
-          }
-
-          ApplicationCard(apk.application)
-          DistributionCard(apk.metaData)
-          RecognizedLibrariesCard(apk)
-          SdkCard(apk)
-          JsonResourcesCard(apk.jsonResources)
-          DetailTabsCard(apk)
-
-          if (apk.isBundle) {
-            ListCard(stringResource(R.string.card_splits, apk.bundleApks.size), apk.bundleApks)
-          }
+          Text(stringResource(R.string.safety_note), style = MaterialTheme.typography.bodySmall)
         }
-        SupportCard()
-
-        Text(stringResource(R.string.safety_note), style = MaterialTheme.typography.bodySmall)
       }
     }
   }

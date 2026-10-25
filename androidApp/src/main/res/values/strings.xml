@@ -317,4 +317,8 @@
     <string name="editor_err_not_utf8">The file is not UTF-8 text. Saving it here would change bytes the editor cannot show, so it is not opened.</string>
     <string name="editor_err_too_large">The file is larger than %1$d MB. The editor does not open files that big.</string>
     <string name="menu_open">Open menu</string>
+    <string name="card_secret_codes">Secret codes (%1$d)</string>
+    <string name="secret_codes_note">Dialer codes this app listens for, read from its manifest. Dial opens the system dialer with the code filled in; the dialer decides whether to run it, and some dialers ignore secret codes. Long-press a row to copy the code.</string>
+    <string name="secret_code_dial">Dial</string>
+    <string name="secret_code_no_dialer">No dialer app was found.</string>
 </resources>

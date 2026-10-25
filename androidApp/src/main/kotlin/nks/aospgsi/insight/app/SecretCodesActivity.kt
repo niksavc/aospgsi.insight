@@ -84,7 +84,10 @@ private fun SecretCodesScreen(onBack: () -> Unit) {
         )
         Switch(checked = showSystem, onCheckedChange = { showSystem = it })
       }
-      Text(stringResource(R.string.secret_codes_page_note), style = MaterialTheme.typography.bodySmall)
+      Text(
+        stringResource(R.string.secret_codes_page_note),
+        style = MaterialTheme.typography.bodySmall,
+      )
 
       val found = apps
       when {

@@ -26,11 +26,44 @@ object SecretCodes {
 
   /** Secret codes declared in [manifest], in manifest order; empty if it cannot be read. */
   fun fromManifest(manifest: ByteArray): List<SecretCode> =
-    try {
-      Reader(manifest).read()
-    } catch (_: RuntimeException) {
+    if (!mentionsScheme(manifest)) {
       emptyList()
+    } else {
+      try {
+        Reader(manifest).read()
+      } catch (_: RuntimeException) {
+        emptyList()
+      }
     }
+
+  /**
+   * A cheap pre-check for scanning every installed app: the scheme is a string in the manifest's
+   * string pool, stored as UTF-8 or as UTF-16, so a manifest without those bytes has no code.
+   */
+  private fun mentionsScheme(manifest: ByteArray): Boolean =
+    contains(manifest, SCHEME.encodeToByteArray()) ||
+      contains(
+        manifest,
+        ByteArray(SCHEME.length * 2) { if (it % 2 == 0) SCHEME[it / 2].code.toByte() else 0 },
+      )
+
+  private fun contains(haystack: ByteArray, needle: ByteArray): Boolean {
+    if (needle.isEmpty() || haystack.size < needle.size) return false
+    val first = needle[0]
+    var i = 0
+    val last = haystack.size - needle.size
+    outer@ while (i <= last) {
+      if (haystack[i] == first) {
+        for (j in 1 until needle.size) if (haystack[i + j] != needle[j]) {
+          i++
+          continue@outer
+        }
+        return true
+      }
+      i++
+    }
+    return false
+  }
 
   private val COMPONENTS = setOf("receiver", "activity", "activity-alias", "service", "provider")
 

@@ -273,6 +273,7 @@ fun AospGsiAndroidApp() {
           listOf(
               R.string.nav_apps to InstalledAppsActivity::class.java,
               R.string.nav_editor to TextEditorActivity::class.java,
+              R.string.nav_secret_codes to SecretCodesActivity::class.java,
               R.string.nav_settings to SettingsActivity::class.java,
               R.string.nav_about to AboutActivity::class.java,
             )

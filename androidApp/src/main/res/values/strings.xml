@@ -321,4 +321,10 @@
     <string name="secret_codes_note">Dialer codes this app listens for, read from its manifest. Dial opens the system dialer with the code filled in; the dialer decides whether to run it, and some dialers ignore secret codes. Long-press a row to copy the code.</string>
     <string name="secret_code_dial">Dial</string>
     <string name="secret_code_no_dialer">No dialer app was found.</string>
+    <string name="nav_secret_codes">Secret codes</string>
+    <string name="secret_codes_title">Secret codes</string>
+    <string name="secret_codes_filter">Filter by app, package or code</string>
+    <string name="secret_codes_note">Dialer codes (*#*#code#*#*) that installed apps declare in their manifests. Dial opens the system dialer with the code filled in; the dialer decides whether to run it, and some dialers ignore secret codes. Long-press a code to copy it.</string>
+    <string name="secret_codes_scanning">Reading manifests: %1$d of %2$d…</string>
+    <string name="secret_codes_count">%1$d codes in %2$d apps (of %3$d scanned)</string>
 </resources>

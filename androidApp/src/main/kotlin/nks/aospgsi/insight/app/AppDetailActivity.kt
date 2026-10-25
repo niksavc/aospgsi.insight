@@ -27,13 +27,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.io.File
-import java.io.IOException
-import java.util.zip.ZipFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
 import nks.aospgsi.insight.core.apkinspector.SecretCode
-import nks.aospgsi.insight.core.apkinspector.SecretCodes
 import nks.aospgsi.insight.core.model.ApkInspection
 
 /** Details of an installed app: the inspection an APK file gets, run on its installed base APK. */
@@ -84,17 +81,6 @@ private fun load(context: Context, packageName: String): InstalledDetails {
   val hasSplits = !app.splitSourceDirs.isNullOrEmpty()
   return InstalledDetails(inspection, granted, hasSplits, readSecretCodes(File(app.sourceDir)))
 }
-
-/** Secret codes the app declares; reading the manifest is best effort, so a failure is none. */
-private fun readSecretCodes(baseApk: File): List<SecretCode> =
-  try {
-    ZipFile(baseApk).use { zip ->
-      val entry = zip.getEntry("AndroidManifest.xml") ?: return emptyList()
-      SecretCodes.fromManifest(zip.getInputStream(entry).use { it.readBytes() })
-    }
-  } catch (_: IOException) {
-    emptyList()
-  }
 
 @Composable
 private fun AppDetailScreen(packageName: String?, onBack: () -> Unit) {

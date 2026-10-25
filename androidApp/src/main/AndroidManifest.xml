@@ -24,6 +24,7 @@
 
         <activity android:name=".InstalledAppsActivity" android:exported="false" />
         <activity android:name=".AppDetailActivity" android:exported="false" />
+        <activity android:name=".SecretCodesActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
         <!-- Edits survive rotation and window resizing: the activity is not recreated. -->
         <activity

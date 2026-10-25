@@ -33,33 +33,34 @@ import nks.aospgsi.insight.core.apkinspector.SecretCode
  */
 @Composable
 internal fun SecretCodesCard(codes: List<SecretCode>) {
-  val context = LocalContext.current
   InfoCard(stringResource(R.string.card_secret_codes, codes.size)) {
     Text(stringResource(R.string.secret_codes_note), style = MaterialTheme.typography.bodySmall)
-    codes.forEach { code ->
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier =
-          Modifier.fillMaxWidth()
-            .combinedClickable(
-              onClick = {},
-              onLongClick = { copyCode(context, code.dialString) },
-            )
-            .padding(vertical = 4.dp),
-      ) {
-        Column(Modifier.weight(1f)) {
-          Text(
-            code.dialString,
-            style = MaterialTheme.typography.bodyLarge,
-            fontFamily = FontFamily.Monospace,
-          )
-          Text(code.component, style = MaterialTheme.typography.bodySmall)
-        }
-        OutlinedButton(onClick = { dial(context, code) }) {
-          Text(stringResource(R.string.secret_code_dial))
-        }
-      }
+    codes.forEach { code -> SecretCodeRow(code) }
+  }
+}
+
+/** One code with its handler and a button that opens the dialer; long-press copies the code. */
+@Composable
+internal fun SecretCodeRow(code: SecretCode) {
+  val context = LocalContext.current
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    modifier =
+      Modifier.fillMaxWidth()
+        .combinedClickable(onClick = {}, onLongClick = { copyCode(context, code.dialString) })
+        .padding(vertical = 4.dp),
+  ) {
+    Column(Modifier.weight(1f)) {
+      Text(
+        code.dialString,
+        style = MaterialTheme.typography.bodyLarge,
+        fontFamily = FontFamily.Monospace,
+      )
+      Text(code.component, style = MaterialTheme.typography.bodySmall)
+    }
+    OutlinedButton(onClick = { dial(context, code) }) {
+      Text(stringResource(R.string.secret_code_dial))
     }
   }
 }

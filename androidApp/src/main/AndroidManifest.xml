@@ -87,9 +87,8 @@
         <!-- Initialises Compose Multiplatform resources before any screen is drawn. -->
         <provider
             android:name="org.jetbrains.compose.resources.AndroidContextProvider"
-            android:authorities="${applicationId}.resources-init-provider"
-            android:exported="false"
-            android:initOrder="99" />
+            android:authorities="${applicationId}.resources.AndroidContextProvider"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

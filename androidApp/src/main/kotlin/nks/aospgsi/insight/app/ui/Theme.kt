@@ -29,7 +29,7 @@ private val LightColors =
     surfaceContainer = Color(0xFFF3F3F8),
   )
 
-/** Dark scheme on true black: saves power on OLED screens and keeps cards readable. */
+/** Dark scheme: near-black surfaces with a little lift between them. */
 private val DarkColors =
   darkColorScheme(
     primary = IndigoLight,
@@ -38,6 +38,15 @@ private val DarkColors =
     onPrimaryContainer = Color(0xFFE2E0FF),
     secondary = Color(0xFFC4C3E8),
     tertiary = Color(0xFFE9B9D8),
+    background = Color(0xFF121217),
+    surface = Color(0xFF121217),
+    surfaceVariant = Color(0xFF2B2B33),
+    surfaceContainer = Color(0xFF1D1D24),
+  )
+
+/** The dark scheme on true black: saves power on OLED screens and keeps cards readable. */
+private val BlackColors =
+  DarkColors.copy(
     background = Color.Black,
     surface = Color.Black,
     surfaceVariant = Color(0xFF212126),
@@ -45,12 +54,14 @@ private val DarkColors =
   )
 
 /**
- * App theme: indigo accent, white / true-black surfaces, system dark mode. Dynamic (wallpaper)
- * colors are off by default so the brand colors stay stable, and available on Android 12+.
+ * App theme: indigo accent, white / dark / true-black surfaces. Dynamic (wallpaper) colors are off
+ * by default so the brand colors stay stable, and available on Android 12+.
  */
 @Composable
 fun AospGsiTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
+  /** With [darkTheme]: true black surfaces instead of dark gray. */
+  black: Boolean = false,
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
@@ -58,8 +69,19 @@ fun AospGsiTheme(
     when {
       dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
         val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        when {
+          darkTheme && black ->
+            dynamicDarkColorScheme(context)
+              .copy(
+                background = Color.Black,
+                surface = Color.Black,
+                surfaceContainer = Color(0xFF16161B),
+              )
+          darkTheme -> dynamicDarkColorScheme(context)
+          else -> dynamicLightColorScheme(context)
+        }
       }
+      darkTheme && black -> BlackColors
       darkTheme -> DarkColors
       else -> LightColors
     }

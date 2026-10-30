@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -68,7 +67,7 @@ import nks.aospgsi.insight.core.texteditor.TextSearch
  * A plain UTF-8 text editor for files the user opens through the system picker, or that another app
  * hands over with "Open with". It keeps a file's line ending style and byte order mark.
  */
-class TextEditorActivity : ComponentActivity() {
+class TextEditorActivity : AppActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val uri = intent?.data

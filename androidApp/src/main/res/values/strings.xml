@@ -150,7 +150,11 @@
     <string name="settings_theme">Theme</string>
     <string name="theme_system">Follow the system</string>
     <string name="theme_light">Light</string>
-    <string name="theme_dark">Dark (true black)</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_black">Black (AMOLED)</string>
+    <string name="settings_language">Language</string>
+    <string name="language_default">System default</string>
+    <string name="language_restart_note">The app restarts to apply the language.</string>
     <string name="settings_colors">Colors</string>
     <string name="settings_dynamic_color">Use wallpaper colors (Material You)</string>
     <string name="settings_dynamic_color_unsupported">Needs Android 12 or newer.</string>
@@ -317,4 +321,22 @@
     <string name="editor_err_not_utf8">The file is not UTF-8 text. Saving it here would change bytes the editor cannot show, so it is not opened.</string>
     <string name="editor_err_too_large">The file is larger than %1$d MB. The editor does not open files that big.</string>
     <string name="menu_open">Open menu</string>
+    <string name="card_secret_codes">Secret codes (%1$d)</string>
+    <string name="secret_codes_note">Dialer codes this app listens for, read from its manifest. Dial opens the system dialer with the code filled in; the dialer decides whether to run it, and some dialers ignore secret codes. Long-press a row to copy the code.</string>
+    <string name="secret_code_dial">Dial</string>
+    <string name="secret_code_no_dialer">No dialer app was found.</string>
+    <string name="nav_secret_codes">Secret codes</string>
+    <string name="secret_codes_title">Secret codes</string>
+    <string name="secret_codes_filter">Filter by app, package or code</string>
+    <string name="secret_codes_page_note">Dialer codes (*#*#code#*#*) that installed apps declare in their manifests. Dial opens the system dialer with the code filled in; the dialer decides whether to run it, and some dialers ignore secret codes. Long-press a code to copy it.</string>
+    <string name="secret_codes_scanning">Reading manifests: %1$d of %2$d…</string>
+    <string name="secret_codes_count">%1$d codes in %2$d apps (of %3$d scanned)</string>
+    <string name="app_control_title">Cache and processes</string>
+    <string name="app_control_clear_cache">Clear cache</string>
+    <string name="app_control_force_stop">Force stop</string>
+    <string name="app_control_note">Android lets only the system do this to another app, so it runs through Shizuku. Without Shizuku the app\'s system settings page opens, where both are a tap away.</string>
+    <string name="app_control_done">Done.</string>
+    <string name="app_control_needs_permission">Allow this app in Shizuku, then tap the button again.</string>
+    <string name="app_control_opened_settings">Shizuku is not running. The app\'s system settings page was opened; use Storage and Force stop there.</string>
+    <string name="app_control_failed">Failed: %1$s</string>
 </resources>

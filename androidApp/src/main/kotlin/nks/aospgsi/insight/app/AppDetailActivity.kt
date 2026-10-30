@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,10 +29,11 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.core.apkinspector.ApkAnalyzer
+import nks.aospgsi.insight.core.apkinspector.SecretCode
 import nks.aospgsi.insight.core.model.ApkInspection
 
 /** Details of an installed app: the inspection an APK file gets, run on its installed base APK. */
-class AppDetailActivity : ComponentActivity() {
+class AppDetailActivity : AppActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val packageName = intent.getStringExtra(EXTRA_PACKAGE)
@@ -52,6 +52,7 @@ private class InstalledDetails(
   val inspection: ApkInspection,
   val granted: Set<String>,
   val hasSplits: Boolean,
+  val secretCodes: List<SecretCode>,
 )
 
 private sealed interface DetailsState {
@@ -77,7 +78,7 @@ private fun load(context: Context, packageName: String): InstalledDetails {
       ?.toSet()
       .orEmpty()
   val hasSplits = !app.splitSourceDirs.isNullOrEmpty()
-  return InstalledDetails(inspection, granted, hasSplits)
+  return InstalledDetails(inspection, granted, hasSplits, readSecretCodes(File(app.sourceDir)))
 }
 
 @Composable
@@ -151,9 +152,11 @@ private fun DetailsContent(details: InstalledDetails) {
       apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
     }
   }
+  apk.packageName?.let { AppControlCard(it) }
   ApplicationCard(apk.application)
   DistributionCard(apk.metaData)
   RecognizedLibrariesCard(apk)
   SdkCard(apk)
+  if (details.secretCodes.isNotEmpty()) SecretCodesCard(details.secretCodes)
   DetailTabsCard(apk, granted = details.granted)
 }

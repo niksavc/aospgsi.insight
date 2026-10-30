@@ -1,4 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
@@ -8,11 +10,49 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Lets the patch progress notification be shown as a Live Update on Android 16+. -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- Privileged or signature permissions: an ordinary install is not granted them. They are
+         declared for the privileged backends (system app, Shizuku, root) that are planned. -->
+    <uses-permission
+        android:name="android.permission.CLEAR_APP_CACHE"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.GET_APP_OPS_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.FORCE_STOP_PACKAGES"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Shizuku (API 23+ runtime permission and the older one) and Dhizuku. -->
+    <uses-permission
+        android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API" />
+    <uses-permission android:name="com.rosan.dhizuku.permission.API" />
     <application
         android:allowBackup="false"
         android:label="AOSP GSI Insight"
+        android:multiArch="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.AospGsiInsight">
+
+        <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
+        <!-- Copied from the reference list; no effect is known for these (android.max_aspect is the pre-Android-8 limit for tall screens). -->
+        <meta-data android:name="to.dualscreen" android:value="true" />
+        <meta-data android:name="android.max_aspect" android:value="2.1" />
+        <meta-data android:name="android.supports_size_changes" android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -24,6 +64,7 @@
 
         <activity android:name=".InstalledAppsActivity" android:exported="false" />
         <activity android:name=".AppDetailActivity" android:exported="false" />
+        <activity android:name=".SecretCodesActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
         <!-- Edits survive rotation and window resizing: the activity is not recreated. -->
         <activity
@@ -46,6 +87,32 @@
             android:name=".PatchService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Initialises Compose Multiplatform resources before any screen is drawn. -->
+        <provider
+            android:name="org.jetbrains.compose.resources.AndroidContextProvider"
+            android:authorities="${applicationId}.resources.AndroidContextProvider"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Receives the Shizuku binder when Shizuku starts, so the app can use it. -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"
+            tools:ignore="ExportedContentProvider" />
 
         <receiver
             android:name="nks.aospgsi.insight.core.installer.InstallResultReceiver"

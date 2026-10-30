@@ -14,6 +14,8 @@ desugar-jdk-libs = "2.1.5"
 androidx-activity = "1.9.3"
 androidx-compose-bom = "2026.08.00"
 
+shizuku = "13.1.5"
+
 spotless = "8.10.4"
 ktfmt = "0.65"
 
@@ -21,6 +23,8 @@ ktfmt = "0.65"
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidx-compose-bom" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
+shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
 apktool-lib = { module = "org.apktool:apktool-lib", version.ref = "apktool" }
 desugar-jdk-libs-nio = { module = "com.android.tools:desugar_jdk_libs_nio", version.ref = "desugar-jdk-libs" }
 # apksig is versioned together with the Android Gradle plugin.

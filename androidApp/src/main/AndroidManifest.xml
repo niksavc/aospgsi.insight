@@ -34,19 +34,23 @@
         android:name="android.permission.FORCE_STOP_PACKAGES"
         tools:ignore="ProtectedPermissions" />
     <!-- Shizuku (API 23+ runtime permission and the older one) and Dhizuku. -->
+    <uses-permission
+        android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
     <uses-permission android:name="moe.shizuku.manager.permission.API" />
     <uses-permission android:name="com.rosan.dhizuku.permission.API" />
     <application
         android:allowBackup="false"
         android:label="AOSP GSI Insight"
+        android:multiArch="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.AospGsiInsight">
 
         <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
-        <!-- Copied from the reference list; no effect is known for these. -->
+        <!-- Copied from the reference list; no effect is known for these (android.max_aspect is the pre-Android-8 limit for tall screens). -->
         <meta-data android:name="to.dualscreen" android:value="true" />
-        <meta-data android:name="android:multiArch" android:value="true" />
+        <meta-data android:name="android.max_aspect" android:value="2.1" />
         <meta-data android:name="android.supports_size_changes" android:value="true" />
 
         <activity

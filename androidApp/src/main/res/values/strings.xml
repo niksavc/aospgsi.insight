@@ -150,7 +150,11 @@
     <string name="settings_theme">Theme</string>
     <string name="theme_system">Follow the system</string>
     <string name="theme_light">Light</string>
-    <string name="theme_dark">Dark (true black)</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_black">Black (AMOLED)</string>
+    <string name="settings_language">Language</string>
+    <string name="language_default">System default</string>
+    <string name="language_restart_note">The app restarts to apply the language.</string>
     <string name="settings_colors">Colors</string>
     <string name="settings_dynamic_color">Use wallpaper colors (Material You)</string>
     <string name="settings_dynamic_color_unsupported">Needs Android 12 or newer.</string>

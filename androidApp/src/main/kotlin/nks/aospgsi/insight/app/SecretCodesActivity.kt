@@ -1,7 +1,6 @@
 package nks.aospgsi.insight.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,7 @@ import androidx.compose.ui.unit.dp
  * Every dialer secret code that the installed apps declare, found by reading their manifests. The
  * idea is from the open-source Secret Codes app by Simon Marquis (Apache-2.0); this is new code.
  */
-class SecretCodesActivity : ComponentActivity() {
+class SecretCodesActivity : AppActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContent { AppTheme { SecretCodesScreen(onBack = { finish() }) } }

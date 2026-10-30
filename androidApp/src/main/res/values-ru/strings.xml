@@ -150,7 +150,11 @@
     <string name="settings_theme">Тема</string>
     <string name="theme_system">Как в системе</string>
     <string name="theme_light">Светлая</string>
-    <string name="theme_dark">Тёмная (чисто чёрная)</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_black">Чёрная (AMOLED)</string>
+    <string name="settings_language">Язык</string>
+    <string name="language_default">По умолчанию</string>
+    <string name="language_restart_note">Чтобы применить язык, приложение перезапустится.</string>
     <string name="settings_colors">Цвета</string>
     <string name="settings_dynamic_color">Цвета обоев (Material You)</string>
     <string name="settings_dynamic_color_unsupported">Нужен Android 12 или новее.</string>

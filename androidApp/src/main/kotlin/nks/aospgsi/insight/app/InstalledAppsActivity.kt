@@ -3,7 +3,6 @@ package nks.aospgsi.insight.app
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +40,7 @@ import kotlinx.coroutines.withContext
 import nks.aospgsi.insight.core.verification.InstallPolicy
 import nks.aospgsi.insight.core.verification.ProprietaryGoogle
 
-class InstalledAppsActivity : ComponentActivity() {
+class InstalledAppsActivity : AppActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContent { AppTheme { InstalledAppsScreen(onBack = { finish() }) } }

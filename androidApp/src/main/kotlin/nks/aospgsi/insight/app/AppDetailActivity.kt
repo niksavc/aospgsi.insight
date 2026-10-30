@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,7 @@ import nks.aospgsi.insight.core.apkinspector.SecretCode
 import nks.aospgsi.insight.core.model.ApkInspection
 
 /** Details of an installed app: the inspection an APK file gets, run on its installed base APK. */
-class AppDetailActivity : ComponentActivity() {
+class AppDetailActivity : AppActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val packageName = intent.getStringExtra(EXTRA_PACKAGE)

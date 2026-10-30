@@ -3,6 +3,7 @@ package nks.aospgsi.insight.app
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

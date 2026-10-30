@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Packages LSPosed offers as this module's scope: the system framework. -->
-    <string-array name="scope">
-        <item>android</item>
-    </string-array>
-</resources>

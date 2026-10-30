@@ -152,6 +152,7 @@ private fun DetailsContent(details: InstalledDetails) {
       apk.warnings.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall) }
     }
   }
+  apk.packageName?.let { AppControlCard(it) }
   ApplicationCard(apk.application)
   DistributionCard(apk.metaData)
   RecognizedLibrariesCard(apk)

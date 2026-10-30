@@ -93,4 +93,6 @@ dependencies {
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.material3)
+  implementation(libs.shizuku.api)
+  implementation(libs.shizuku.provider)
 }

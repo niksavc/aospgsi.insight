@@ -44,15 +44,11 @@
         android:theme="@style/Theme.AospGsiInsight">
 
         <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
-        <!-- Copied from the reference list; no effect is known for these two. -->
+        <!-- Copied from the reference list; no effect is known for these. -->
         <meta-data android:name="to.dualscreen" android:value="true" />
-        <meta-data android:name="android:multiarch" android:value="true" />
-        <!-- Xposed / LSPosed module markers. The module has no hooks yet, so enabling it changes
-             nothing; the scope list is in res/values/arrays.xml. -->
-        <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="AOSP GSI Insight" />
-        <meta-data android:name="xposedminversion" android:value="54" />
-        <meta-data android:name="xposedscope" android:resource="@array/scope" />
+        <meta-data android:name="android:multiArch" android:value="true" />
+        <meta-data android:name="android.supports_size_changes" android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -87,6 +83,33 @@
             android:name=".PatchService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Initialises Compose Multiplatform resources before any screen is drawn. -->
+        <provider
+            android:name="org.jetbrains.compose.resources.AndroidContextProvider"
+            android:authorities="${applicationId}.resources-init-provider"
+            android:exported="false"
+            android:initOrder="99" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Receives the Shizuku binder when Shizuku starts, so the app can use it. -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"
+            tools:ignore="ExportedContentProvider" />
 
         <receiver
             android:name="nks.aospgsi.insight.core.installer.InstallResultReceiver"

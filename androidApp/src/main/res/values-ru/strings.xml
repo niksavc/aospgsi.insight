@@ -331,4 +331,12 @@
     <string name="secret_codes_page_note">Коды для звонилки (*#*#код#*#*), которые установленные приложения объявляют в манифестах. «Набрать» открывает системную звонилку с уже введённым кодом; запускать ли код, решает звонилка, а некоторые звонилки секретные коды игнорируют. Долгое нажатие на код копирует его.</string>
     <string name="secret_codes_scanning">Чтение манифестов: %1$d из %2$d…</string>
     <string name="secret_codes_count">Кодов: %1$d в приложениях: %2$d (проверено %3$d)</string>
+    <string name="app_control_title">Кэш и процессы</string>
+    <string name="app_control_clear_cache">Очистить кэш</string>
+    <string name="app_control_force_stop">Остановить</string>
+    <string name="app_control_note">Android разрешает это делать с чужим приложением только системе, поэтому действие выполняется через Shizuku. Без Shizuku открывается системная страница приложения, где то и другое делается в одно касание.</string>
+    <string name="app_control_done">Готово.</string>
+    <string name="app_control_needs_permission">Разрешите это приложение в Shizuku и нажмите кнопку ещё раз.</string>
+    <string name="app_control_opened_settings">Shizuku не запущен. Открыта системная страница приложения: используйте «Хранилище» и «Остановить» там.</string>
+    <string name="app_control_failed">Не удалось: %1$s</string>
 </resources>

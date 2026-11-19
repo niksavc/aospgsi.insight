@@ -16,6 +16,9 @@
 # env:   ANDROID_NDK_HOME (NDK root), WORK_DIR (scratch dir, default ./build/aapt2)
 set -euo pipefail
 
+# CMake 4 refuses projects that declare a minimum below 3.5 (zopfli does). This lets them configure.
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
 ABI=${1:?abi}
 API=${2:?api level}
 OUT=$(realpath -m "${3:?output dir}")

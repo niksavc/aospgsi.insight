@@ -135,7 +135,7 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
           try {
             context.startActivity(
               Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, page)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
             onDismiss()
           } catch (_: Exception) {
@@ -183,7 +183,7 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
                   context.startActivity(
                     Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
                       .setClassName(store.packageName, store.className)
-                      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                   )
                   onDismiss()
                 } catch (_: Exception) {
@@ -322,7 +322,8 @@ private fun hasSplitApks(context: Context, packageName: String): Boolean =
 private fun findStoreApps(context: Context, packageName: String): List<StoreApp> {
   val pm = context.packageManager
   val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
-  return pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+  return pm
+    .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
     .filter { it.activityInfo.packageName != context.packageName && it.activityInfo.exported }
     .distinctBy { it.activityInfo.packageName }
     .map {

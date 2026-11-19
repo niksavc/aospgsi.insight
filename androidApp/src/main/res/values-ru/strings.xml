@@ -339,4 +339,13 @@
     <string name="app_control_needs_permission">Разрешите это приложение в Shizuku и нажмите кнопку ещё раз.</string>
     <string name="app_control_opened_settings">Shizuku не запущен. Открыта системная страница приложения: используйте «Хранилище» и «Остановить» там.</string>
     <string name="app_control_failed">Не удалось: %1$s</string>
+    <string name="actions_title">Дальнейшие действия</string>
+    <string name="action_launch">Запустить</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_share">Поделиться</string>
+    <string name="action_share_note">Отправляется только основной APK-файл, без split-частей.</string>
+    <string name="actions_stores">Открыть страницу приложения в</string>
+    <string name="action_no_launcher">У этого приложения нет запускаемого экрана.</string>
+    <string name="action_open_failed">Не удалось открыть.</string>
+    <string name="action_share_failed">Не удалось подготовить APK-файл.</string>
 </resources>

@@ -129,7 +129,7 @@ private fun DetailsContent(details: InstalledDetails) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
       ) {
-        apk.packageName?.let { AppIcon(it, size = 56.dp) }
+        apk.packageName?.let { AppIconWithActions(it, size = 56.dp) }
         Column {
           Text(apk.appLabel ?: unknown, style = MaterialTheme.typography.titleLarge)
           Text(apk.packageName ?: unknown, style = MaterialTheme.typography.bodySmall)

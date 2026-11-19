@@ -221,7 +221,7 @@ private fun AppRowCard(row: InstalledRow, floor: Int?, onOpen: () -> Unit) {
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      AppIcon(row.packageName)
+      AppIconWithActions(row.packageName)
       Column(Modifier.weight(1f)) {
         Text(row.label, style = MaterialTheme.typography.titleMedium, maxLines = 1)
         Text(row.packageName, style = MaterialTheme.typography.bodySmall, maxLines = 1)

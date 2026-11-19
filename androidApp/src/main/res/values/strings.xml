@@ -339,4 +339,13 @@
     <string name="app_control_needs_permission">Allow this app in Shizuku, then tap the button again.</string>
     <string name="app_control_opened_settings">Shizuku is not running. The app\'s system settings page was opened; use Storage and Force stop there.</string>
     <string name="app_control_failed">Failed: %1$s</string>
+    <string name="actions_title">Further operation</string>
+    <string name="action_launch">Launch</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_share">Share</string>
+    <string name="action_share_note">Shares the base APK file only; split APKs are not included.</string>
+    <string name="actions_stores">Open the app\'s page in</string>
+    <string name="action_no_launcher">This app has no launcher screen.</string>
+    <string name="action_open_failed">Could not open it.</string>
+    <string name="action_share_failed">Could not prepare the APK file.</string>
 </resources>

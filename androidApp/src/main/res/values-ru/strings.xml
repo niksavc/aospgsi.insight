@@ -348,4 +348,5 @@
     <string name="action_no_launcher">У этого приложения нет запускаемого экрана.</string>
     <string name="action_open_failed">Не удалось открыть.</string>
     <string name="action_share_failed">Не удалось подготовить APK-файл.</string>
+    <string name="action_delete">Удалить</string>
 </resources>

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -106,10 +105,11 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         textAlign = TextAlign.Center,
       )
-      Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ActionButton(
           label = stringResource(R.string.action_launch),
           glyph = Glyph.LAUNCH,
+          modifier = Modifier.weight(1f),
           container = MaterialTheme.colorScheme.primary,
           content = MaterialTheme.colorScheme.onPrimary,
         ) {
@@ -128,6 +128,7 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
         ActionButton(
           label = stringResource(R.string.action_settings),
           glyph = Glyph.SETTINGS,
+          modifier = Modifier.weight(1f),
           container = MaterialTheme.colorScheme.secondary,
           content = MaterialTheme.colorScheme.onSecondary,
         ) {
@@ -145,6 +146,7 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
         ActionButton(
           label = stringResource(R.string.action_share),
           glyph = Glyph.SHARE,
+          modifier = Modifier.weight(1f),
           container = MaterialTheme.colorScheme.tertiary,
           content = MaterialTheme.colorScheme.onTertiary,
         ) {
@@ -167,6 +169,23 @@ private fun AppActionsSheet(packageName: String, onDismiss: () -> Unit) {
                 toast(shareFailed)
               }
             }
+          }
+        }
+        ActionButton(
+          label = stringResource(R.string.action_delete),
+          glyph = Glyph.DELETE,
+          modifier = Modifier.weight(1f),
+          container = MaterialTheme.colorScheme.error,
+          content = MaterialTheme.colorScheme.onError,
+        ) {
+          try {
+            context.startActivity(
+              Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            onDismiss()
+          } catch (_: Exception) {
+            toast(openFailed)
           }
         }
       }
@@ -203,35 +222,36 @@ private enum class Glyph {
   LAUNCH,
   SETTINGS,
   SHARE,
+  DELETE,
 }
 
 @Composable
 private fun ActionButton(
   label: String,
   glyph: Glyph,
+  modifier: Modifier,
   container: Color,
   content: Color,
   onClick: () -> Unit,
 ) {
   Column(
-    modifier =
-      Modifier.width(80.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) {
-        onClick()
-      },
+    modifier = modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { onClick() },
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.spacedBy(6.dp),
   ) {
+    // The same size as the store icons below, so both rows read as one grid.
     Box(
-      modifier = Modifier.size(56.dp).clip(CircleShape).background(container),
+      modifier = Modifier.size(48.dp).clip(CircleShape).background(container),
       contentAlignment = Alignment.Center,
     ) {
-      Canvas(Modifier.size(26.dp)) { drawGlyph(glyph, content) }
+      Canvas(Modifier.size(22.dp)) { drawGlyph(glyph, content) }
     }
     Text(
       label,
-      style = MaterialTheme.typography.labelLarge,
+      style = MaterialTheme.typography.labelMedium,
       maxLines = 1,
       overflow = TextOverflow.Ellipsis,
+      textAlign = TextAlign.Center,
     )
   }
 }
@@ -272,20 +292,20 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
     }
     Glyph.SETTINGS -> {
       val center = Offset(w / 2, h / 2)
-      drawCircle(color, radius = w * 0.2f, center = center, style = Stroke(stroke))
       for (i in 0 until 8) {
         val angle = Math.PI * 2 * i / 8
         val dx = cos(angle).toFloat()
         val dy = sin(angle).toFloat()
         drawLine(
           color,
-          start = Offset(center.x + dx * w * 0.32f, center.y + dy * w * 0.32f),
-          end = Offset(center.x + dx * w * 0.47f, center.y + dy * w * 0.47f),
-          strokeWidth = stroke * 1.5f,
+          start = Offset(center.x + dx * w * 0.3f, center.y + dy * w * 0.3f),
+          end = Offset(center.x + dx * w * 0.46f, center.y + dy * w * 0.46f),
+          strokeWidth = stroke * 1.4f,
           cap = StrokeCap.Round,
         )
       }
-      drawCircle(color, radius = w * 0.32f, center = center, style = Stroke(stroke))
+      drawCircle(color, radius = w * 0.3f, center = center, style = Stroke(stroke * 1.2f))
+      drawCircle(color, radius = w * 0.1f, center = center)
     }
     Glyph.SHARE -> {
       val top = Offset(w * 0.78f, h * 0.2f)
@@ -296,6 +316,23 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
       drawCircle(color, radius = w * 0.13f, center = top)
       drawCircle(color, radius = w * 0.13f, center = mid)
       drawCircle(color, radius = w * 0.13f, center = bottom)
+    }
+    Glyph.DELETE -> {
+      val round = StrokeCap.Round
+      drawLine(color, Offset(w * 0.12f, h * 0.24f), Offset(w * 0.88f, h * 0.24f), stroke, round)
+      drawLine(color, Offset(w * 0.36f, h * 0.1f), Offset(w * 0.64f, h * 0.1f), stroke, round)
+      drawLine(color, Offset(w * 0.36f, h * 0.1f), Offset(w * 0.36f, h * 0.24f), stroke, round)
+      drawLine(color, Offset(w * 0.64f, h * 0.1f), Offset(w * 0.64f, h * 0.24f), stroke, round)
+      val body =
+        Path().apply {
+          moveTo(w * 0.22f, h * 0.24f)
+          lineTo(w * 0.28f, h * 0.9f)
+          lineTo(w * 0.72f, h * 0.9f)
+          lineTo(w * 0.78f, h * 0.24f)
+        }
+      drawPath(body, color, style = Stroke(stroke, cap = round))
+      drawLine(color, Offset(w * 0.42f, h * 0.42f), Offset(w * 0.42f, h * 0.74f), stroke, round)
+      drawLine(color, Offset(w * 0.58f, h * 0.42f), Offset(w * 0.58f, h * 0.74f), stroke, round)
     }
   }
 }

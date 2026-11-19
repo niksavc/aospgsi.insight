@@ -351,7 +351,7 @@ private fun shareIntent(context: Context, packageName: String, label: String): I
     Intent(Intent.ACTION_SEND)
       .setType("application/vnd.android.package-archive")
       .putExtra(Intent.EXTRA_STREAM, uri)
-      .setClipData(ClipData.newRawUri(null, uri))
       .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      .apply { clipData = ClipData.newRawUri(null, uri) }
   return Intent.createChooser(send, label).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 }
